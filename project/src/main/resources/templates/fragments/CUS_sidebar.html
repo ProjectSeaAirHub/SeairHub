@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<!-- 
+  [ CUS(화주) 전용 사이드바 ]
+  - 프래그먼트 이름을 'cusSidebarFragment'로 명확하게 지정합니다.
+  - 'activeMenu' 파라미터를 받아 현재 활성화된 메뉴를 표시합니다.
+-->
+<aside class="sidebar" th:fragment="cusSidebarFragment(activeMenu)">
+
+  <!-- (공통) 로그인 시 사용자 프로필 표시 -->
+  <div class="profile" sec:authorize="isAuthenticated()">
+    <div class="logo-circle"></div>
+    <!-- sec:authentication="name"은 로그인한 사용자의 아이디(또는 이름)를 표시합니다. -->
+    <p sec:authentication="name">CUS_User_ID</p>
+  </div>
+
+  <!-- (CUS 전용) 메뉴 목록 -->
+<nav class="menu">
+    <ul>
+      <li class="menu-item" th:classappend="${activeMenu == 'cusRequest'} ? 'is-active' : ''">
+        <a th:href="@{/cus/cusRequest}">나의요청조회</a>
+      </li>
+      <li class="menu-item" th:classappend="${activeMenu == 'cusTracking'} ? 'is-active' : ''">
+        <a th:href="@{/cus/tracking}">운송중인 화물</a>
+      </li>
+      <li class="menu-item" th:classappend="${activeMenu == 'cusHistory'} ? 'is-active' : ''">
+        <a th:href="@{/cus/cusHistory}">요청이력조회</a>
+      </li>
+    </ul>
+  </nav>
+</aside>
+
+</html>

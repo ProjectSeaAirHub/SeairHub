@@ -1,0 +1,102 @@
+/* ===================================== */
+/* '나의 요청 조회' 페이지 고유 스타일  */
+/* ===================================== */
+
+/* 컨트롤 바의 액션 그룹 정렬 */
+.controls-bar .action-group {
+    margin-left: auto;
+    /* 새 요청 등록 버튼을 오른쪽으로 보냄 */
+}
+
+/* 요청 카드 레이아웃 (화주용) */
+.request-card {
+    /* 기존 .card 스타일을 기반으로 확장 */
+    padding: 24px 28px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+    /* status-indicator를 위함 */
+}
+
+/* 요청 상태를 시각적으로 보여주는 좌측 바 */
+.request-card .status-indicator {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 6px;
+    height: 100%;
+    background-color: #e9ecef;
+    /* 기본 색상 */
+    transition: background-color 0.3s;
+}
+
+/* 상태별 색상 지정 */
+.request-card[data-status="pending"] .status-indicator {
+    background-color: var(--text-color-light);
+    /* 제안 대기중: 회색 */
+}
+
+.request-card[data-status="offers_received"] .status-indicator {
+    background-color: var(--primary-color);
+    /* 제안 도착: 파란색 */
+}
+
+.request-card[data-status="confirmed"] .status-indicator {
+    background-color: var(--success-color);
+    /* 거래 확정: 녹색 */
+}
+
+
+.request-card .info {
+    flex-grow: 1;
+}
+
+.request-card .item-name {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+}
+
+.request-card .details {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    color: var(--text-color-secondary);
+}
+
+/* 메타 정보 (제안 수, 상태) */
+.request-card .meta {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    text-align: center;
+}
+
+.request-card .offer-info .offer-count {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--danger-color);
+}
+
+.request-card .offer-info p {
+    font-size: 14px;
+    color: var(--text-color-secondary);
+    margin: 0;
+}
+
+/* 제안 보기 버튼 비활성화 스타일 */
+.btn-view-offers:disabled {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-view-offers:disabled:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}

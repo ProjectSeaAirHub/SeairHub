@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>관리자 - 유저 관리</title>
+    <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/layout.css}">
+    <link rel="stylesheet" th:href="@{/css/components.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/ADM_management.css}">
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/ADM_sidebar :: admSidebarFragment(activeMenu='user-management')}"></div>
+
+    <main class="main-content">
+        <div th:replace="~{fragments/header :: headerFragment}"></div>
+        <section class="content">
+            <h2 class="page-title">유저 관리 (화주)</h2>
+            <div class="table-container">
+                <table class="management-table">
+                    <thead>
+                    <tr>
+                        <th>회사명</th>
+                        <th>담당자</th>
+                        <th>아이디</th>
+                        <th>연락처/이메일</th>
+                        <th>가입일</th>
+                        <th>활동 요약</th>
+                        <th>계정 상태</th>
+                        <th>관리</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="user : ${userList}">
+                        <td th:text="${user.companyName}"></td>
+                        <td th:text="${user.userName}"></td>
+                        <td th:text="${user.userId}"></td>
+                        <td>
+                            <span th:text="${user.phoneNum}"></span><br>
+                            <span th:text="${user.email}"></span>
+                        </td>
+                        <td th:text="${user.createDate}"></td>
+                        <td>
+                            총 요청: <strong th:text="${user.totalRequests}"></strong><br>
+                            거래 성사: <strong th:text="${user.completedDeals}"></strong><br>
+                            총 CBM: <strong th:text="${#numbers.formatDecimal(user.totalCbm, 1, 1)}"></strong>
+                        </td>
+                        <td>
+                            <span class="status-badge" th:text="${user.approvalStatus}" th:classappend="${user.approvalStatus?.toLowerCase()}"></span>
+                        </td>
+                        <td>
+                            <div class="action-buttons" th:attr="data-user-seq=${user.userSeq}">
+                                <th:block th:if="${user.approvalStatus == 'APPROVED'}">
+                                    <button class="btn btn-sm btn-warning btn-action" data-action="SUSPENDED">정지</button>
+                                </th:block>
+                                <th:block th:if="${user.approvalStatus == 'SUSPENDED'}">
+                                    <button class="btn btn-sm btn-info btn-action" data-action="APPROVED">활성화</button>
+                                </th:block>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</div>
+<script th:src="@{/js/ADM_management.js}"></script>
+</body>
+</html>

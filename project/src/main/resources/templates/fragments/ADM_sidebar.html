@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<aside class="sidebar" th:fragment="admSidebarFragment(activeMenu)">
+    <div class="profile">
+        <div class="logo-circle"></div>
+        <p>SeAir_ADMIN</p>
+    </div>
+    <nav class="menu">
+        <ul>
+            <li class="menu-item" th:classappend="${activeMenu == 'dashboard'} ? 'is-active' : ''">
+                <a th:href="@{/adm/dashboard}">메인 대시보드</a>
+            </li>
+            <li class="menu-item" th:classappend="${activeMenu == 'forwarder-management'} ? 'is-active' : ''">
+                <a th:href="@{/adm/forwarder-management}">포워더관리</a>
+            </li>
+            <li class="menu-item" th:classappend="${activeMenu == 'user-management'} ? 'is-active' : ''">
+                <a th:href="@{/adm/user-management}">유저관리</a>
+            </li>
+        </ul>
+    </nav>
+</aside>
+
+</html>

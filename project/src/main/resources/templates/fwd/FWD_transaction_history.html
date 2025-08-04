@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>거래내역 - The 채움+</title>
+    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/pages/FWD_transaction_history.css">
+</head>
+
+<body>
+    <div class="container">
+		<div th:replace="~{fragments/sidebar :: sidebarFragment(activeMenu='transaction_history')}"></div>
+        
+        <main class="main-content">
+        
+		<!-- 상단 헤더부분 fragment로 대체함. -->
+		<div th:replace="~{fragments/header :: headerFragment}"></div>
+
+            <!-- 이 페이지의 고유한 콘텐츠 -->
+            <section class="content">
+                <h2 class="page-title">거래내역 조회</h2>
+
+				<div class="controls-bar">
+				    <div class="control-group filter-group" id="transaction-filter-group">
+				        <button class="btn btn-filter is-active" data-filter="all">전체</button>
+				        <button class="btn btn-filter" data-filter="sale">나의 판매</button>
+				        <button class="btn btn-filter" data-filter="purchase">나의 구매</button>
+				    </div>
+				
+				    <div class="control-group date-group">
+				        <input type="date" id="start-date" class="form-input date-input">
+				        <span>~</span>
+				        <input type="date" id="end-date" class="form-input date-input">
+				    </div>
+<form class="search-group" id="search-form">
+    <input type="text" id="keyword-input" class="form-input" placeholder="품명 또는 거래상대방 검색">
+    <button type="submit" class="btn btn-primary">조회</button>
+    <button type="button" id="btn-calculate-summary" class="btn btn-dark">금액 계산</button>
+</form>
+				</div>
+
+                <div class="table-container">
+                    <table class="data-table transaction-table">
+                        <thead>
+                            <tr>
+                                <th>거래일</th>
+                                <th>거래 유형</th>
+                                <th>경로</th> <th>품명</th>
+                                <th>거래 상대방</th>
+                                <th>거래 금액</th>
+                                <th>상태</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transaction-list-body">
+                            <!-- JS로 동적으로 생성 -->
+                        </tbody>
+                        
+                    </table>
+                </div>
+
+                <div class="pagination-container"></div>
+            </section>
+        </main>
+    </div>
+<div class="modal-wrapper" id="summary-modal" style="display: none;">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3 id="summary-modal-title">거래 합계</h3>
+            <button class="btn-close">×</button>
+        </div>
+        <div class="modal-body" id="summary-modal-body">
+            </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary btn-cancel">닫기</button>
+        </div>
+    </div>
+</div>
+
+    <!-- 페이지 전용 스크립트 -->
+    <script th:src="@{/js/FWD_transaction_history.js}" type="module"></script>
+</body>
+
+</html>

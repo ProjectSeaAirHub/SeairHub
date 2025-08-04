@@ -1,0 +1,487 @@
+/* css/pages/CUS_request.css */
+
+/* ===================================== */
+/* '나의요청 관리' 페이지 고유 스타일 */
+/* FWD_request.css를 기반으로 CUS용으로 수정 */
+/* ===================================== */
+
+/* [공통 스타일] 활성 필터 및 정렬 버튼 (FWD와 동일) */
+.active-filters-container {
+    padding-bottom: 24px;
+    min-height: 20px;
+    /* 필터가 없을 때도 높이 유지 */
+}
+
+.active-filters-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    /* 알약 사이의 간격 */
+}
+
+.active-filter-pill {
+    display: flex;
+    align-items: center;
+    background-color: var(--grey-background);
+    color: var(--dark-color);
+    padding: 6px 12px;
+    border-radius: var(--border-radius-pill);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.btn-remove-pill {
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-left: 8px;
+    padding: 0;
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--text-color-light);
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.btn-remove-pill:hover {
+    color: var(--danger-color);
+}
+
+.btn-sort span {
+    display: inline-block;
+    transition: transform 0.2s ease-in-out;
+}
+
+.btn-sort.asc span {
+    transform: rotate(180deg);
+}
+
+
+/* ===================================== */
+/* [CUS용 수정] 요청 카드 리스트 및 개별 카드 */
+/* ===================================== */
+.request-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* 개별 요청 아이템을 감싸는 컨테이너. 확장 상태 관리를 위함 */
+.request-item-container {
+    /* 이 컨테이너 자체에는 특별한 스타일이 필요 없으며, JS에서 상태 제어용으로 사용 */
+}
+
+.request-card {
+    /* .card의 기본 스타일을 상속받음 */
+    padding: 24px 28px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: border-radius 0.3s ease-in-out;
+    /* 확장 시 부드러운 효과 */
+}
+
+/* JS로 is-expanded 클래스가 추가되면 카드 하단 모서리를 뾰족하게 만듦 */
+.request-item-container.is-expanded .request-card {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+
+/* 카드 내부 레이아웃 (FWD와 대부분 동일) */
+.request-card .info {
+    flex-grow: 1;
+}
+
+.request-card .id-label {
+    /* FWD의 id-label 대신 request-id-label 사용 가능 */
+    font-size: 13px;
+    color: var(--text-color-light);
+    margin-bottom: 8px;
+    display: block;
+}
+
+.request-card .item-name {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+}
+
+.request-card .details {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+}
+
+.request-card .meta {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    justify-content: flex-end;
+}
+
+.request-card .meta .cbm {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary-color);
+    flex-shrink: 0;
+    /* CBM값이 잘리지 않도록 */
+}
+
+/* [CUS용 핵심 수정] 카드 오른쪽 액션 영역 */
+.request-card .actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 220px;
+    /* 너비를 확보하여 레이아웃 안정성 부여 */
+    justify-content: flex-end;
+}
+
+/* 'N개 제안 도착' 상태 배지 */
+.request-card .status-badge {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 8px 16px;
+    border-radius: var(--border-radius-pill);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+/* '제안보기' 버튼 */
+.request-card .btn-details {
+    padding: 10px 20px;
+    font-size: 15px;
+    font-weight: 700;
+    /* component.css의 .btn-primary 스타일을 따르거나, 여기서 커스텀 가능 */
+    background-color: var(--dark-color);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-lg);
+}
+
+
+/* ======================================================== */
+/* [CUS용 추가] 펼쳐지는 '받은 제안 목록' 스타일 */
+/* FWD의 입찰 폼 대신, 화주가 받은 제안 목록을 보여주는 영역입니다. */
+/* ======================================================== */
+.offer-details-container {
+    background-color: var(--grey-background);
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out, padding 0.4s ease-out;
+    padding: 0 28px;
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+}
+
+/* .is-expanded 상태는 JS가 request-item-container 전체에 적용 */
+.request-item-container.is-expanded .offer-details-container {
+    max-height: 1000px;
+    /* 제안 목록이 많을 경우를 대비해 넉넉하게 */
+    padding: 28px;
+}
+
+/* 받은 제안 목록을 감싸는 리스트 */
+.offer-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* 개별 제안 카드 스타일 */
+.offer-card {
+    background-color: #fff;
+    border-radius: var(--border-radius-md);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border: 1px solid #e9ecef;
+}
+
+.offer-card .forwarder-info {
+    font-weight: 600;
+}
+
+.offer-card .offer-price {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: var(--dark-color);
+}
+
+.offer-card .offer-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.offer-card .btn-accept {
+    background-color: var(--success-color);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+}
+
+.offer-card .btn-decline {
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+}
+
+
+/* ===================================== */
+/* [공통 스타일] 항구별 필터 모달 (FWD와 동일) */
+/* ===================================== */
+
+.modal-content {
+    max-width: 600px;
+    border-radius: var(--border-radius-xl);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    padding: 0;
+}
+
+.modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+.modal-body .port-section {
+    margin-bottom: 20px;
+}
+
+.modal-body .port-section:last-child {
+    margin-bottom: 0;
+}
+
+.modal-body h4 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 20px 24px;
+    background-color: #f9fafb;
+    border-top: 1px solid var(--border-color);
+    border-bottom-left-radius: var(--border-radius-xl);
+    border-bottom-right-radius: var(--border-radius-xl);
+}
+
+.port-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 12px;
+}
+
+.port-options label {
+    display: flex;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+    font-size: 15px;
+    padding-left: 30px;
+    user-select: none;
+}
+
+.port-options input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.port-options .checkmark {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    height: 20px;
+    width: 20px;
+    background-color: #fff;
+    border: 2px solid #adb5bd;
+    border-radius: var(--border-radius-sm);
+    transition: all 0.2s;
+}
+
+.port-options label:hover input~.checkmark {
+    border-color: var(--primary-color);
+}
+
+.port-options input:checked~.checkmark {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.port-options .checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.port-options input:checked~.checkmark:after {
+    display: block;
+}
+
+.port-options .checkmark:after {
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 3px 3px 0;
+    transform: rotate(45deg);
+}
+
+.controls-bar .date-group #btn-date-search {
+    /* [핵심] 버튼 내에서 텍스트 줄 바꿈을 금지합니다. */
+    white-space: nowrap;
+
+    /* 최소 너비를 지정하여 버튼이 너무 좁아지는 것을 방지할 수도 있습니다. */
+    min-width: 60px;
+
+    /* 패딩을 조절하여 너비를 확보하는 방법도 있습니다. */
+    padding-left: 18px;
+    padding-right: 18px;}
+    
+    
+/* Floating Action Button (우측 하단 고정 버튼) */
+.fab {
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--danger-color); /* 화주는 다른 색으로 강조 */
+    color: white;
+    font-size: 32px;
+    line-height: 56px;
+    text-align: center;
+    border: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    cursor: pointer;
+    z-index: 999;
+    transition: all 0.2s ease-in-out;
+}
+.fab:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+}
+
+/* 모달 내부 폼 스타일 */
+#new-request-form .modal-body h4 {
+    font-size: 16px;
+    margin-top: 20px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e9ecef;
+}
+#new-request-form .modal-body h4:first-child {
+    margin-top: 0;
+}
+#new-request-form .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+#new-request-form .form-grid input,
+#new-request-form .form-grid select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+}
+
+/* [✅ FWD_request.css 파일 맨 위에 이 코드를 추가] */
+
+.active-filters-container {
+    padding-bottom: 24px;
+    min-height: 20px; /* 필터가 없을 때도 높이 유지 */
+}
+
+.active-filters-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px; /* 태그 사이의 간격 */
+}
+
+.active-filter-pill {
+    display: flex;
+    align-items: center;
+    background-color: var(--grey-background);
+    color: var(--dark-color);
+    padding: 6px 12px;
+    border-radius: var(--border-radius-pill);
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--border-color);
+}
+
+.btn-remove-pill {
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-left: 8px;
+    padding: 0;
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--text-color-light);
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.btn-remove-pill:hover {
+    color: var(--danger-color);
+}
+
+/* /static/css/pages/CUS_request.css 파일 맨 아래에 추가 */
+
+/* 마감된 카드 스타일 */
+.request-card.is-closed {
+    background-color: #f8f9fa; /* 배경을 약간 회색으로 */
+    opacity: 0.7; /* 살짝 투명하게 */
+}
+
+.request-card.is-closed:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: var(--border-color);
+}
+
+.request-card.is-closed .btn {
+    pointer-events: none; /* 클릭 비활성화 */
+}
+
+/* 마감 배지 스타일 */
+.status-badge.closed {
+    background-color: #6c757d; /* 어두운 회색 */
+    color: white;
+    padding: 8px 16px;
+    border-radius: var(--border-radius-pill);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+/* /static/css/pages/CUS_request.css 파일 맨 아래에 추가 */
+
+/* 필터 버튼 그룹 간격 조절 */
+.filter-group .filter-spacer {
+    margin-left: 20px; /* 버튼 왼쪽에 간격을 줍니다 */
+}

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 대시보드</title>
+
+    <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/layout.css}">
+    <link rel="stylesheet" th:href="@{/css/components.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/ADM_dashboard.css}"> <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="container">
+
+		<div th:replace="~{fragments/ADM_sidebar :: admSidebarFragment(activeMenu='dashboard')}"></div>
+        <main class="main-content">
+            <div th:replace="~{fragments/header :: headerFragment}"></div>
+
+            <section class="content">
+                <h2 class="page-title">메인 대시보드</h2>
+
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <h3>실시간 거래 현황</h3>
+                        <div class="metric-item">
+                            <span class="metric-label">오늘 등록된 요청</span>
+                            <span class="metric-value" id="today-requests">0</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">오늘 체결된 거래</span>
+                            <span class="metric-value" id="today-deals">0</span>
+                        </div>
+                    </div>
+                    <div class="dashboard-card">
+                        <h3>사용자 현황</h3>
+                        <div class="metric-item">
+                            <span class="metric-label">포워더</span>
+                            <span class="metric-value" id="total-fwd-users">0</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">화주</span>
+                            <span class="metric-value" id="total-cus-users">0</span>
+                        </div>
+                    </div>
+                    <div class="dashboard-card alert-card">
+                        <h3>주요 알림 및 현황</h3>
+                        <div class="metric-item">
+                            <span class="metric-label">승인 대기중인 사용자</span>
+                            <span class="metric-value" id="pending-users">0</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">마감 임박 (입찰 없음)</span>
+                            <span class="metric-value" id="no-bid-requests">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-section">
+                    <h3>미확정 물동량 현황</h3>
+                    <div class="chart-container">
+                        <canvas id="cbmChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script th:src="@{/js/ADM_dashboard.js}"></script> </body>
+</html>

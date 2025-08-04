@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>SEAIRHUB - B2B 물류 중개 플랫폼</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/index.css}">
+</head>
+<body>
+    <header class="main-header">
+        <a href="/" class="logo">
+            <img th:src="@{/images/logo_long.png}" alt="SEAIRHUB">
+        </a>
+        <nav class="nav">
+            <th:block sec:authorize="isAnonymous()">
+                <a th:href="@{/login}">로그인</a>
+                <a th:href="@{/join}" class="btn-primary">회원가입</a>
+            </th:block>
+
+            <th:block sec:authorize="isAuthenticated()">
+                <a th:href="@{/fwd/fwdRequest}" sec:authorize="hasRole('fwd')" class="btn-primary">E-SERVICE</a>
+                <a th:href="@{/cus/cusRequest}" sec:authorize="hasRole('cus')">E-SERVICE</a>
+                <a th:href="@{/adm/dashboard}" sec:authorize="hasRole('admin')">관리자 페이지</a>
+
+                <a href="#">내정보</a>
+                <a th:href="@{/logout}">로그아웃</a>
+            </th:block>
+        </nav>
+    </header>
+
+		<main>
+		    <section class="hero-section">
+		        <h1>무역 토탈 솔루션 1위, SEAIRHUB</h1>
+		        <p>무료로 물류비 견적 받아보고, 나에게 맞는 포워딩사와 업무를 진행해보세요.</p>
+		        <a th:href="@{/join}" sec:authorize="isAnonymous()" class="btn-quote">무료 물류비 견적받기</a>
+		    </section>
+		
+		    <section class="chart-section">
+		        <h2>실시간 해상 운임 지수 (SCFI)</h2>
+		        <div class="chart-container">
+		            <canvas id="scfiChart"></canvas>
+		        </div>
+		    </section>
+		</main>
+        <script th:src="@{/js/index-chart.js}"></script>
+</body>
+</html>

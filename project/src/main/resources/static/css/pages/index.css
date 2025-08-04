@@ -1,0 +1,55 @@
+        body { background-color: #fff; }
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .main-header .logo img { height: 24px; }
+        .main-header .nav a {
+            margin-left: 20px;
+            text-decoration: none;
+            font-weight: 500;
+            color: #333;
+        }
+        .main-header .nav .btn-primary {
+            background-color: #F86A5A;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+        }
+        .hero-section {
+            padding: 80px 40px;
+            text-align: center;
+            background-color: #f8f9fa;
+        }
+        .hero-section h1 { font-size: 42px; margin-bottom: 20px; }
+        .hero-section p { font-size: 18px; color: #666; margin-bottom: 30px; }
+        .btn-quote {
+            background-color: #FC512C;
+            color: white;
+            padding: 14px 28px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 16px;
+        }
+        /* ... 기존 style 내용 ... */
+        /* [추가] 차트 섹션 스타일 */
+/* [수정] 차트 섹션 위쪽에 60px의 여백을 추가하여 버튼과 겹치지 않게 합니다. */
+.chart-section {
+    padding: 60px 40px;
+    text-align: center;
+}
+        .chart-section h2 {
+            font-size: 28px;
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            height: 400px;
+        }
+        

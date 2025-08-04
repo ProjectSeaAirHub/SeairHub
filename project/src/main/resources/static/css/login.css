@@ -1,0 +1,304 @@
+/* 기본 스타일 및 폰트 설정 */
+@charset "UTF-8";
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+
+:root {
+    --primary-color: #F86A5A;
+    --kakao-color: #FEE500;
+    --facebook-color: #1877F2;
+    --border-color: #DBDBDB;
+    --text-color-light: #8E8E8E;
+    --font-family-base: 'Noto Sans KR', sans-serif;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-family-base);
+    background-color: #f0f2f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* 로그인 컨테이너 */
+.login-container {
+    background-color: #fff;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+/* 로고 */
+.logo {
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: center; /* 로고를 가운데 정렬합니다. */
+}
+.logo img {
+    height: 30px; /* 로고 이미지의 세로 크기를 조절합니다. (원하는 크기로 변경 가능) */
+}
+
+
+/* 폼 그룹 */
+.form-group {
+    margin-bottom: 12px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+.form-group input::placeholder {
+    color: var(--text-color-light);
+}
+
+/* 로그인 옵션 (자동로그인, 찾기) */
+.login-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    font-size: 13px;
+}
+
+.login-options label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-color-light);
+    cursor: pointer;
+}
+
+.login-options a {
+    color: var(--text-color-light);
+    text-decoration: none;
+}
+
+.login-options a:hover {
+    text-decoration: underline;
+}
+
+/* 버튼 공통 스타일 */
+.btn {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 12px;
+    box-sizing: border-box;
+    transition: background-color 0.2s;
+}
+
+/* 버튼 개별 스타일 */
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    filter: brightness(0.95);
+}
+
+.btn-social {
+    color: #000;
+    border: 1px solid var(--border-color);
+    background-color: #fff;
+}
+
+.btn-kakao {
+    background-color: var(--kakao-color);
+}
+
+.btn-google:hover {
+    background-color: #f7f7f7;
+}
+
+.btn-facebook {
+    background-color: var(--facebook-color);
+    color: white;
+}
+
+.btn-apple:hover {
+    background-color: #f7f7f7;
+}
+
+/* 구분선 */
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: var(--text-color-light);
+    font-size: 12px;
+    margin: 20px 0;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.divider span {
+    padding: 0 10px;
+}
+
+/* 회원가입 링크 */
+.signup-link {
+    font-size: 14px;
+}
+
+.signup-link a {
+    color: #000;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.signup-link a:hover {
+    text-decoration: underline;
+}
+
+/* 비활성화된 버튼 스타일 */
+.btn:disabled {
+    background-color: #ccc !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+}
+
+.btn:disabled:hover {
+    background-color: #ccc !important;
+    filter: none !important;
+}
+
+
+a.btn{
+	.btn {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 12px;
+    box-sizing: border-box;
+    transition: background-color 0.2s;
+}
+}
+
+.btn-naver{
+	background-color: #03C75A;
+	color:white
+}
+
+
+
+/* login.css 파일에 추가할 내용 */
+
+/* --- 회원가입 폼 전용 스타일 --- */
+
+/* 1. 폼 그룹 전체의 간격 조정 */
+.login-form .form-group {
+    /* [수정] 입력창과 바로 아래 확인 메시지 사이의 간격을 줄입니다. */
+    margin-bottom: 8px; 
+    position: relative;
+}
+
+/* 2. 입력창(input) 기본 스타일 */
+.login-form input[type="text"],
+.login-form input[type="email"],
+.login-form input[type="password"],
+.login-form input[type="tel"] {
+    width: 100%;
+    padding: 14px 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px; /* 모서리를 약간 둥글게 만듭니다. */
+    font-size: 15px;
+    box-sizing: border-box; /* 패딩과 테두리를 너비에 포함시킵니다. */
+    transition: border-color 0.3s, box-shadow 0.3s; /* 부드러운 전환 효과 */
+}
+
+/* 3. 입력창 포커스 시 효과 */
+.login-form input:focus {
+    outline: none;
+    border-color: var(--primary-color); /* 테두리 색을 기본 색상으로 변경 */
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15); /* 바깥쪽에 은은한 그림자 효과 */
+}
+
+/* 4. 유효성 검사 메시지 스타일 (예: #confirmId) */
+#confirmId, #confirmEmail, #confirmPwd {
+    font-size: 13px;
+    height: 16px; 
+    display: block;
+    text-align: left;
+    padding-left: 4px;
+    /* [수정] 메시지 아래에 충분한 공간을 주어 다음 입력창과 분리시킵니다. */
+    margin-bottom: 14px; 
+}
+
+/* 5. 사업자등록증 첨부 (기본 파일 첨부 UI 개선) */
+.file-upload-group {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px 12px;
+}
+
+.file-upload-group > label {
+    font-size: 15px;
+    color: #555;
+    display: block;
+    margin-bottom: 8px;
+}
+
+/* 파일 선택 버튼과 파일명 표시 영역을 감싸는 wrapper */
+.file-input-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+/* "선택된 파일 없음" 텍스트를 보여줄 readonly input */
+.file-display {
+    flex-grow: 1; /* 남는 공간을 모두 차지 */
+    padding: 8px 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background-color: #f9f9f9;
+    font-size: 14px;
+    color: #666;
+    margin-right: 10px; /* 버튼과의 간격 */
+}
+
+/* 실제 파일 찾기 버튼 역할을 할 label */
+.btn-file-select {
+    background-color: #555;
+    color: white;
+    padding: 9px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    white-space: nowrap; /* 글자 줄바꿈 방지 */
+    transition: background-color 0.2s;
+}
+
+.btn-file-select:hover {
+    background-color: #333;
+}
+
+/* 실제 input[type="file"]은 화면에서 숨김 */
+.hidden-file-input {
+    display: none;
+}

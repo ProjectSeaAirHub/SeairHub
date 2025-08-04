@@ -1,0 +1,478 @@
+/* css/pages/FWD_request.css */
+
+/* ===================================== */
+/* '견적요청조회' 페이지 고유 스타일 */
+/* ===================================== */
+
+.active-filters-container {
+    padding-bottom: 24px;
+    min-height: 20px;
+    /* 필터가 없을 때도 높이 유지 */
+}
+
+/* [추가] 활성 필터 알약(Pill) 스타일 */
+.active-filters-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    /* 알약 사이의 간격 */
+}
+
+.active-filter-pill {
+    display: flex;
+    align-items: center;
+    background-color: var(--grey-background);
+    color: var(--dark-color);
+    padding: 6px 12px;
+    border-radius: var(--border-radius-pill);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.btn-remove-pill {
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-left: 8px;
+    padding: 0;
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--text-color-light);
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.btn-remove-pill:hover {
+    color: var(--danger-color);
+}
+
+
+/* [추가] 정렬 버튼 화살표 회전 애니메이션 */
+.btn-sort span {
+    display: inline-block;
+    transition: transform 0.2s ease-in-out;
+}
+
+.btn-sort.asc span {
+    transform: rotate(180deg);
+}
+
+
+/* ===================================== */
+/* 요청 카드 리스트 및 개별 카드 레이아웃 */
+/* ===================================== */
+.request-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.request-card {
+    /* .card의 기본 스타일을 상속받음 */
+    padding: 24px 28px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.request-card.is-expanded {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.request-card .info {
+    flex-grow: 1;
+}
+
+.request-card .id-label {
+    font-size: 13px;
+    color: var(--text-color-light);
+    margin-bottom: 8px;
+    display: block;
+}
+
+.request-card .item-name {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+}
+
+.request-card .details {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+}
+
+.request-card .meta {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    min-width: 180px;
+    justify-content: flex-end;
+}
+
+.request-card .meta .type {
+    text-align: right;
+}
+
+.request-card .meta .type p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-color-secondary);
+}
+
+.request-card .meta .cbm {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--cbm-color);
+    text-align: left;
+    flex-shrink: 0;
+    width: 100px;
+}
+
+.request-card .actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* [수정] .btn-status-display 클래스를 추가하여 크기 스타일을 공유하도록 변경 */
+.request-card .btn-timer,
+.request-card .btn-quote,
+.request-card .btn-status-display {
+    padding: 12px 20px;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 8px;
+}
+
+
+.request-card .btn-timer.is-expired {
+    background-color: #6c757d;
+}
+
+.request-card .btn-quote.is-disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+/* ===================================== */
+/* 펼쳐지는 입찰 폼 스타일 */
+/* ===================================== */
+.offer-form-expand {
+    /* 레이어 순서를 위로 올리기 위한 설정 */
+    position: relative;
+    z-index: 5; /* 다른 요소들보다 위에 오도록 설정 */
+
+    /* 공간과 디자인을 위한 설정 */
+    padding: 24px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    margin-top: -1px;
+
+    /* 부드러운 애니메이션 효과 (선택 사항) */
+    transition: all 0.3s ease-in-out;}
+
+/* is-expanded 상태는 request-item-container 전체에 적용하여 제어 */
+.request-item-container .offer-form-expand {
+    display: none;
+}
+
+.request-item-container.is-expanded .request-card {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.request-item-container.is-expanded .offer-form-expand {
+    display: block;
+    /* 펼쳐질 때 보이도록 함 */
+    max-height: 500px;
+    padding: 28px;
+}
+
+
+.offer-form-container {
+    display: flex;
+    gap: 24px;
+}
+
+.form-main-column {
+    flex: 2;
+}
+
+.form-info-column {
+    flex: 1;
+    min-width: 280px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 16px 12px;
+    align-items: center;
+}
+
+.info-box {
+    background-color: #fff;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    padding: 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.info-box .form-status {
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.info-box .form-status .possible {
+    color: var(--success-color);
+}
+
+.info-box .form-status .impossible {
+    color: var(--danger-color);
+}
+
+.info-box ul {
+    font-size: 13px;
+    color: var(--text-color-light);
+    padding-left: 16px;
+    margin-bottom: auto;
+    line-height: 1.6;
+}
+
+.form-actions {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 8px;
+}
+
+.form-actions .btn-cancel {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+}
+
+.form-actions .btn-submit-bid:disabled {
+    background-color: #adb5bd;
+}
+
+/* ===================================== */
+/* [추가] 항구별 필터 모달 디자인 개선 */
+/* ===================================== */
+
+/* 모달 컨텐츠 영역 스타일 */
+.modal-content {
+    max-width: 600px;
+    /* 모달 최대 너비 설정 */
+    border-radius: var(--border-radius-xl);
+    /* 모서리를 더 둥글게 */
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    /* 그림자 효과 */
+    padding: 0;
+    /* 내부 패딩은 각 섹션에서 제어 */
+}
+
+/* 모달 헤더 */
+.modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+/* 모달 바디 */
+.modal-body {
+    padding: 24px;
+}
+
+.modal-body .port-section {
+    margin-bottom: 20px;
+}
+
+.modal-body .port-section:last-child {
+    margin-bottom: 0;
+}
+
+.modal-body h4 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+/* 모달 푸터 (버튼 영역) */
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 20px 24px;
+    background-color: #f9fafb;
+    /* 약간의 배경색 추가 */
+    border-top: 1px solid var(--border-color);
+    border-bottom-left-radius: var(--border-radius-xl);
+    border-bottom-right-radius: var(--border-radius-xl);
+}
+
+/* ===================================== */
+/* [수정] 커스텀 체크박스 스타일 (클릭 문제 해결) */
+/* ===================================== */
+
+/* 항구 목록을 그리드 레이아웃으로 변경 */
+.port-options {
+    display: grid;
+    /* 화면 크기에 맞춰 자동으로 컬럼 수가 조절되는 반응형 그리드 */
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 12px;
+}
+
+/* 라벨을 위치 기준점으로 설정 */
+.port-options label {
+    display: flex;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+    font-size: 15px;
+    padding-left: 30px;
+    /* 체크박스가 들어갈 공간 확보 */
+    -webkit-user-select: none;
+    /* 드래그 방지 */
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* 기본 브라우저 체크박스 숨기기 */
+.port-options input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+/* 커스텀 체크박스 배경(박스) 생성 */
+.port-options .checkmark {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    height: 20px;
+    width: 20px;
+    background-color: #fff;
+    border: 2px solid #adb5bd;
+    border-radius: var(--border-radius-sm);
+    transition: all 0.2s;
+}
+
+/* 마우스를 올렸을 때 배경 스타일 */
+.port-options label:hover input~.checkmark {
+    border-color: var(--primary-color);
+}
+
+/* 체크박스가 선택되었을 때 배경 스타일 */
+.port-options input:checked~.checkmark {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* 체크 표시(V) 생성 */
+.port-options .checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+    /* 기본 상태에서는 숨김 */
+}
+
+/* 체크박스가 선택되었을 때 체크 표시 보이기 */
+.port-options input:checked~.checkmark:after {
+    display: block;
+}
+
+/* 체크 표시(V) 스타일 */
+.port-options .checkmark:after {
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 3px 3px 0;
+    transform: rotate(45deg);
+}
+
+/* 체크박스가 '비활성화'되었을 때 */
+.port-options input:disabled~span {
+    color: #ced4da;
+    /* 흐린 글자색 */
+}
+
+.port-options input:disabled~.checkmark {
+    background-color: #f1f3f5;
+    border-color: #e9ecef;
+    cursor: not-allowed;
+}
+
+.port-options label:has(input:disabled) {
+    cursor: not-allowed;
+}
+
+/* FWD_request.css 파일 맨 아래에 추가 */
+
+.request-card.is-closed {
+    background-color: #f8f9fa; /* 배경을 약간 회색으로 */
+    opacity: 0.8; /* 살짝 투명하게 */
+}
+
+.request-card.is-closed:hover {
+    border-color: #e9ecef;
+    box-shadow: none;
+}
+
+.status-badge.closed {
+    background-color: #e2e3e5;
+    color: #495057;
+    border: 1px solid #ced4da;
+}
+
+/* FWD_request.css 파일 맨 아래에 추가 */
+
+.request-card .btn-timer:hover {
+    transform: none;
+}
+
+/* FWD_request.css 파일 맨 아래에 이 코드를 추가하세요 */
+
+.filter-group .filter-divider {
+    color: #e9ecef;     /* 구분선 색상 */
+    font-size: 1.1em;
+    font-weight: 100;
+    align-self: center; /* 버튼들과 수직 중앙 정렬 */
+    margin: 0 4px;      /* 좌우 여백을 살짝 줍니다 */
+}
+
+/* FWD_request.css 파일 맨 아래에 이 코드를 추가하세요 */
+
+/* 비활성화된 라디오 버튼의 라벨 스타일 */
+.port-options label:has(input[type="radio"]:disabled) {
+    cursor: not-allowed;
+    color: #ced4da; /* 글자색을 흐리게 */
+}
+
+/* 비활성화된 라디오 버튼의 체크마크 스타일 */
+.port-options input[type="radio"]:disabled ~ .checkmark {
+    background-color: #f1f3f5; /* 배경색을 약간 회색으로 */
+    border-color: #e9ecef;   /* 테두리도 흐리게 */
+    cursor: not-allowed;
+}
+
+/* 비활성화된 라디오 버튼에 마우스를 올려도 효과 없음 */
+.port-options label:hover input[type="radio"]:disabled ~ .checkmark {
+    border-color: #e9ecef;
+}

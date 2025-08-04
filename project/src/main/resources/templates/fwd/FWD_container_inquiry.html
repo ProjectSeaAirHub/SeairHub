@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>컨테이너 조회 - SEAIRHUB</title>
+    <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/layout.css}">
+    <link rel="stylesheet" th:href="@{/css/components.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/FWD_container_inquiry.css}">
+</head>
+
+<body>
+    <div class="container">
+        <div th:replace="~{fragments/sidebar :: sidebarFragment(activeMenu='container-inquiry')}"></div>
+
+        <main class="main-content">
+            <div th:replace="~{fragments/header :: headerFragment}"></div>
+            <section class="content">
+                <h2 class="page-title">컨테이너조회</h2>
+
+					<div class="sort-group">
+					    <a th:href="@{/fwd/container-inquiry(sort='containerId,' + (${currentSortField == 'containerId'} ? ${reverseSortDirection} : 'asc'))}" class="btn btn-sort" th:classappend="${currentSortField == 'containerId'} ? 'is-active'">
+					        등록순
+					        <span th:if="${currentSortField == 'containerId'}" th:text="${currentSortDirection == 'ASC' ? '▲' : '▼'}"></span>
+					        <span th:unless="${currentSortField == 'containerId'}">▼</span>
+					    </a>
+					    <a th:href="@{/fwd/container-inquiry(sort='etd,' + (${currentSortField == 'etd'} ? ${reverseSortDirection} : 'asc'))}" class="btn btn-sort" th:classappend="${currentSortField == 'etd'} ? 'is-active'">
+					        출항일순
+					        <span th:if="${currentSortField == 'etd'}" th:text="${currentSortDirection == 'ASC' ? '▲' : '▼'}"></span>
+					        <span th:unless="${currentSortField == 'etd'}">▼</span>
+					    </a>
+					    <a th:href="@{/fwd/container-inquiry(sort='eta,' + (${currentSortField == 'eta'} ? ${reverseSortDirection} : 'asc'))}" class="btn btn-sort" th:classappend="${currentSortField == 'eta'} ? 'is-active'">
+					        도착일순
+					        <span th:if="${currentSortField == 'eta'}" th:text="${currentSortDirection == 'ASC' ? '▲' : '▼'}"></span>
+					        <span th:unless="${currentSortField == 'eta'}">▼</span>
+					    </a>
+					    <a th:href="@{/fwd/container-inquiry(sort='availableCbm,' + (${currentSortField == 'availableCbm'} ? ${reverseSortDirection} : 'desc'))}" class="btn btn-sort" th:classappend="${currentSortField == 'availableCbm'} ? 'is-active'">
+					        입찰가능물량순
+					        <span th:if="${currentSortField == 'availableCbm'}" th:text="${currentSortDirection == 'ASC' ? '▲' : '▼'}"></span>
+					        <span th:unless="${currentSortField == 'availableCbm'}">▼</span>
+					    </a>
+					    <a th:href="@{/fwd/container-inquiry(sort='departurePort,' + (${currentSortField == 'departurePort'} ? ${reverseSortDirection} : 'asc'))}" class="btn btn-sort" th:classappend="${currentSortField == 'departurePort'} ? 'is-active'">
+					        경로순
+					        <span th:if="${currentSortField == 'departurePort'}" th:text="${currentSortDirection == 'ASC' ? '▲' : '▼'}"></span>
+					        <span th:unless="${currentSortField == 'departurePort'}">▼</span>
+					    </a>
+					</div> 
+                
+
+                <!-- Thymeleaf를 이용한 동적 렌더링 영역 -->
+                <div class="container-list">
+                    <div th:if="${containers.isEmpty()}" class="no-results-message">
+                        등록된 컨테이너가 없습니다.
+                    </div>
+
+                    <article class="card container-card" th:each="c : ${containers}"
+                        th:classappend="${c.status.name() != 'SCHEDULED'} ? 'is-finalized' : ''">
+                        <div class="card-header">
+                            <div class="info-group">
+                                <span class="label">컨테이너 번호:</span>
+                                <span class="value" th:text="${c.containerId}"></span>
+                            </div>
+                            <div class="info-group">
+                                <span class="label">크기:</span>
+                                <span class="value" th:text="${c.size}"></span>
+                            </div>
+                            <div class="info-group">
+                                <span class="label">총 용량:</span>
+                                <span class="value"
+                                    th:text="${#numbers.formatDecimal(c.totalCapacity, 1, 2)} + ' CBM'"></span>
+                            </div>
+                            <div class="info-group">
+                                <span class="label">ETD:</span>
+                                <span class="value" th:text="${c.sailingDate}"></span>
+                            </div>
+						    <div class="info-group">
+						        <span class="label">ETA:</span>
+						        <span class="value" th:text="${c.arrivalDate}"></span>
+						    </div>                            
+                            <div class="info-group route">
+                                <span class="label">경로:</span>
+                                <span class="value" th:text="${c.route}"></span>
+                            </div>
+
+                            <div class="header-actions">
+                                <button th:if="${c.isDeletable}"
+                                    class="btn btn-sm btn-danger-outline btn-delete-container"
+                                    th:attr="data-container-id=${c.containerId}">삭제</button>
+
+                                <th:block th:unless="${c.isDeletable}">
+                                    <button th:if="${c.isConfirmable}" class="btn btn-sm btn-confirm-container"
+                                        th:attr="data-container-id=${c.containerId}">컨테이너 확정</button>
+                                    <button th:if="${c.status.name() == 'CONFIRMED'}"
+                                        class="btn btn-sm btn-primary btn-ship-container"
+                                        th:attr="data-container-id=${c.containerId}">선적완료</button>
+                                    <button th:if="${c.status.name() == 'SHIPPED'}"
+                                        class="btn btn-sm btn-success btn-complete-shipment"
+                                        th:attr="data-container-id=${c.containerId}">운송완료</button>
+									<button th:if="${c.status.name() == 'COMPLETED'}"
+									        class="btn btn-sm btn-success btn-settle-container"
+									        th:attr="data-container-id=${c.containerId}">정산완료</button>
+									<span th:if="${c.status.name() == 'SETTLED'}"
+									      class="status-badge settled">정산완료</span>
+                                </th:block>
+
+                                <button th:if="${c.status.name() == 'SCHEDULED'}"
+                                    class="btn btn-sm btn-outline btn-register-docs">서류 등록</button>
+                            </div>
+                        </div>
+
+<th:block th:switch="${c.status.name()}">
+    <th:block th:case="'SCHEDULED'">
+        <div class="card-body">
+            <div class="cbm-status-grid">
+                <div class="cbm-item">
+                    <div class="status-color-bar confirmed"></div>
+                    <p class="title">확정</p>
+                    <p class="amount" th:text="${#numbers.formatDecimal(c.confirmedCbm, 1, 2)} + ' CBM'"></p>
+                    <button class="btn btn-sm btn-secondary">상세보기</button>
+                </div>
+                <div class="cbm-item">
+                    <div class="status-color-bar resale"></div>
+                    <p class="title">재판매중</p>
+                    <p class="amount" th:text="${#numbers.formatDecimal(c.resaleCbm, 1, 2)} + ' CBM'"></p>
+                    <button class="btn btn-sm btn-secondary">상세보기</button>
+                </div>
+                <div class="cbm-item">
+                    <div class="status-color-bar bidding"></div>
+                    <p class="title">입찰중</p>
+                    <p class="amount" th:text="${#numbers.formatDecimal(c.biddingCbm, 1, 2)} + ' CBM'"></p>
+                    <button class="btn btn-sm btn-secondary">상세보기</button>
+                </div>
+                <div class="cbm-item available">
+                    <div class="status-color-bar empty"></div>
+                    <p class="title">입찰가능</p>
+                    <p class="amount" th:text="${#numbers.formatDecimal(c.availableCbm, 1, 2)} + ' CBM'"></p>
+                    <button class="btn btn-sm btn-primary">추가입찰</button>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <div class="cbm-progress-bar">
+                <div class="progress-segment confirmed" th:if="${c.getConfirmedPercent() > 0}"
+                    th:style="'width: ' + ${c.getConfirmedPercent()} + '%;'"></div>
+                <div class="progress-segment resale" th:if="${c.getResalePercent() > 0}"
+                    th:style="'width: ' + ${c.getResalePercent()} + '%;'"></div>
+                <div class="progress-segment bidding" th:if="${c.getBiddingPercent() > 0}"
+                    th:style="'width: ' + ${c.getBiddingPercent()} + '%;'"></div>
+            </div>
+        </div>
+    </th:block>
+
+    <th:block th:case="*">
+		<div class="card-body finalized-view">
+		     <div class="progress-tracker">
+		                <div class="step" th:classappend="${#lists.contains({'CONFIRMED', 'SHIPPED', 'COMPLETED', 'SETTLED'}, c.status.name())} ? 'is-complete' : ''"><div class="dot"></div><div class="label">컨테이너 확정</div></div>
+		                <div class="step" th:classappend="${#lists.contains({'SHIPPED', 'COMPLETED', 'SETTLED'}, c.status.name())} ? 'is-complete' : ''"><div class="dot"></div><div class="label">선적완료</div></div>
+		                <div class="step" th:classappend="${#lists.contains({'COMPLETED', 'SETTLED'}, c.status.name())} ? 'is-complete' : ''"><div class="dot"></div><div class="label">운송완료</div></div>
+		     </div>
+		
+		            <div class="finalized-info">
+		                <div class="info-item">
+		                    <span class="label">총 확정 물량</span>
+		                    <span class="amount" th:text="${#numbers.formatDecimal(c.confirmedCbm, 2, 'COMMA', 2, 'POINT')} + ' CBM'"></span>
+		                    <button class="btn btn-sm btn-secondary btn-view-finalized-details"
+		                            th:attr="data-container-id=${c.containerId}">상세보기</button>
+		                </div>
+		            </div>
+		 </div>
+    </th:block>
+</th:block>
+
+                        <div class="details-table-container"></div>
+                    </article>
+                </div> <!-- .container-list 끝 -->
+
+
+                <!-- [신규] 페이지 하단에 상세보기 테이블 템플릿 추가 -->
+                <template id="details-table-template">
+                    <table class="details-table">
+                        <thead>
+                            <tr>
+                                <th>제안/거래 ID</th>
+                                <th>품명</th>
+                                <th>CBM</th>
+                                <th>내 제안가</th>
+                                <th>마감일</th>
+                                <th>관리</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </template>
+
+            </section> <!-- .content 끝 -->
+        </main> <!-- .main-content 끝 -->
+    </div> <!-- .container 끝 -->
+
+
+    <!-- ============================================================== -->
+    <!-- 화면 전체에 걸쳐 사용되는 요소 (플로팅 버튼, 모달 등)는 여기에 모아둡니다. -->
+    <!-- ============================================================== -->
+
+    <button class="btn btn-lg floating-add-btn btn-orange" id="btn-open-add-modal">
+        + 컨테이너 추가
+    </button>
+
+    <!-- 신규 컨테이너 등록 모달 -->
+    <div class="modal-wrapper" id="add-container-modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>신규 컨테이너 등록</h3>
+                <button class="btn-close">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-container-form" onsubmit="return false;">
+                    <div class="form-grid-2col">
+                        <div class="form-row">
+                            <label for="departure-port">출발항</label>
+                            <input type="text" id="departure-port" class="form-input" required>
+                        </div>
+                        <div class="form-row">
+                            <label for="arrival-port">도착항</label>
+                            <input type="text" id="arrival-port" class="form-input" required>
+                        </div>
+                        <div class="form-row">
+                            <label for="etd">출항 예정일 (ETD)</label>
+                            <input type="date" id="etd" class="form-input" required>
+                        </div>
+                        <div class="form-row">
+                            <label for="eta">도착 예정일 (ETA)</label>
+                            <input type="date" id="eta" class="form-input" required>
+                        </div>
+                        <div class="form-row full-width">
+                            <label for="container-size">사이즈</label>
+                            <select id="container-size" class="form-input" required>
+                                <option value="">선택하세요</option>
+                                <option value="20ft">20ft (26 CBM)</option>
+                                <option value="40ft">40ft (55 CBM)</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-cancel">취소</button>
+                <button type="submit" form="add-container-form" class="btn btn-primary"
+                    id="btn-save-container">등록하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 서류 등록 모달 -->
+    <div class="modal-wrapper" id="register-doc-modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>외부 거래 서류 등록</h3>
+                <button class="btn-close">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="register-doc-form" onsubmit="return false;">
+                    <input type="hidden" id="modal-container-id">
+                    <div class="form-row" style="margin-bottom: 1rem;">
+                        <span class="form-label">컨테이너</span>
+                        <span class="form-value" id="modal-container-info"></span>
+                    </div>
+                    <div class="form-row" style="margin-bottom: 1rem;">
+                        <span class="form-label">경로</span>
+                        <span class="form-value" id="modal-container-route"></span>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-row">
+                            <span class="form-label">화물 이름</span>
+                            <input type="text" id="modal-item-name" class="form-input" required placeholder="예: 자동차 부품">
+                        </div>
+                        <div class="form-row">
+                            <span class="form-label">CBM</span>
+                            <input type="number" id="modal-cbm" class="form-input" required step="0.01" min="0.01"
+                                placeholder="예: 5.25">
+                        </div>
+                        <div class="form-row">
+                            <span class="form-label">확정 운임</span>
+                            <div class="price-input-wrapper">
+                                <input type="number" id="modal-price" class="form-input bid-price" required min="0">
+                                <select id="modal-currency" class="form-input currency-select">
+                                    <option value="KRW">KRW</option>
+                                    <option value="USD">USD</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-cancel">취소</button>
+                <button type="submit" form="register-doc-form" class="btn btn-primary" id="btn-save-doc">저장하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS 파일 로드 -->
+    <script th:src="@{/js/fwd_container_inquiry.js}"></script>
+
+</body>
+
+</html>

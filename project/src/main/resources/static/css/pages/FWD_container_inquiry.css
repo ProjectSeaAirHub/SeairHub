@@ -1,0 +1,512 @@
+/* css/pages/FWD_container_inquiry.css */
+.container-list {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    /* 카드 사이의 간격 */
+    margin-top: 24px;
+    /* 정렬 탭과의 간격을 주기 위해 이 줄을 추가합니다. */
+}
+
+.container-card {
+    padding: 0;
+    /* 내부 섹션에서 패딩 제어 */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* 자식 요소의 둥근 모서리를 위해 */
+}
+
+.card-header,
+.card-body,
+.card-footer {
+    padding: 20px 24px;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 16px 24px;
+    /* 세로, 가로 간격 */
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    /* 창이 좁아지면 줄바꿈 */
+    background-color: #f8f9fa;
+    /* 헤더 배경색 */
+}
+
+.info-group {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.info-group .label {
+    font-size: 13px;
+    color: var(--text-color-light);
+}
+
+.info-group .value {
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.info-group.route .arrow {
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+.card-body .cbm-status-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    text-align: center;
+}
+
+.cbm-item .title {
+    font-size: 14px;
+    color: var(--text-color-secondary);
+    margin: 0 0 8px 0;
+}
+
+.cbm-item .amount {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 16px 0;
+    color: var(--dark-color);
+}
+
+.cbm-item.available .amount {
+    color: var(--primary-color);
+}
+
+.cbm-item .btn {
+    width: 100%;
+}
+
+
+.card-footer {
+    padding-top: 16px;
+    padding-bottom: 20px;
+}
+
+.cbm-progress-bar {
+    width: 100%;
+    height: 12px;
+    background-color: #e9ecef;
+    /* 비어있는 부분의 배경색 */
+    border-radius: 6px;
+    display: flex;
+    /* 자식 요소(세그먼트)들을 가로로 나란히 배치 */
+    overflow: hidden;
+    /* 둥근 모서리 밖으로 튀어나가지 않도록 */
+    margin-top: 16px;
+    /* 위쪽 여백 */
+    /* 내부 요소가 둥근 모서리를 넘지 않도록 */
+}
+
+.bar-segment {
+    height: 100%;
+    transition: width 0.3s ease-in-out;
+}
+
+.bar-segment.confirmed {
+    background-color: #20c997;
+}
+
+/* 확정: 녹색 계열 */
+.bar-segment.for-resale {
+    background-color: #ffc107;
+}
+
+/* 재판매: 노랑 계열 */
+.bar-segment.in-bid {
+    background-color: #fd7e14;
+}
+
+/* 입찰중: 주황 계열 */
+
+/* 정렬 버튼 화살표 애니메이션 (request.css와 동일) */
+.btn-sort span {
+    display: inline-block;
+    transition: transform 0.2s ease-in-out;
+}
+
+.btn-sort.asc span {
+    transform: rotate(180deg);
+}
+
+
+/* 각 상태를 나타내는 색상 조각 (세그먼트) */
+.progress-segment {
+    height: 100%;
+    /* 부모 높이를 꽉 채움 */
+    transition: width 0.5s ease-in-out;
+    /* 너비가 바뀔 때 부드러운 효과 */
+}
+
+/* 확정 (녹색 계열) */
+.progress-segment.confirmed {
+    background-color: #20c997;
+}
+
+/* 재판매중 (노란색 계열) */
+.progress-segment.resale {
+    background-color: #ffc107;
+}
+
+/* 입찰중 (주황색 계열) */
+.progress-segment.bidding {
+    background-color: #fd7e14;
+}
+
+
+/* FWD_container_inquiry.css */
+
+/* --- 상세보기 테이블 스타일 --- */
+.details-table-container {
+    padding: 1rem 0;
+}
+
+.details-table {
+    width: 100%;
+    border-collapse: collapse;
+    /* 셀 사이의 경계선을 합침 */
+    font-size: 0.85rem;
+}
+
+.details-table thead {
+    border-bottom: 2px solid #333;
+    /* 헤더 하단에만 두꺼운 선 */
+}
+
+.details-table th {
+    text-align: left;
+    padding: 12px 8px;
+    font-weight: 500;
+    color: #333;
+}
+
+.details-table tbody tr {
+    border-bottom: 1px solid #e9ecef;
+    /* 각 행의 하단에 얇은 선 */
+}
+
+.details-table td {
+    padding: 12px 8px;
+    vertical-align: middle;
+    color: #495057;
+}
+
+/* 관리 컬럼의 버튼 스타일 */
+.details-table .btn-xs {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+    background-color: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.details-table .btn-xs:hover {
+    background-color: #f8f9fa;
+}
+
+.details-table .btn-xs:disabled {
+    background-color: #f1f3f5;
+    color: #adb5bd;
+    cursor: not-allowed;
+    border-color: #dee2e6;
+}
+
+.details-table .btn-danger-outline {
+    border-color: #fa5252;
+    color: #fa5252;
+}
+
+.details-table .btn-danger-outline:hover {
+    background-color: #fa5252;
+    color: #fff;
+}
+
+/* FWD_container_inquiry.css 파일 맨 아래에 추가 */
+
+.add-container-section {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.btn-lg {
+    padding: 12px 24px;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+/* 모달 폼 스타일 */
+.form-grid-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-row.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-row label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+/* 컨테이너 확정 후 보여질 뷰 스타일 */
+.card-body.confirmed-view {
+    display: flex;
+    justify-content: center;
+    /* 가운데 정렬 */
+    align-items: center;
+    padding: 2rem 1rem;
+    /* 위아래로 더 많은 여백 */
+}
+
+.confirmed-cbm-item {
+    text-align: center;
+    border: 2px solid #28a745;
+    /* 확정 색상 테두리 */
+    border-radius: 8px;
+    padding: 1.5rem 2.5rem;
+    background-color: #f8f9fa;
+}
+
+.confirmed-cbm-item .title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #28a745;
+    /* 확정 색상 */
+    margin-bottom: 0.5rem;
+}
+
+.confirmed-cbm-item .amount {
+    font-size: 2rem;
+    /* CBM 숫자 크게 */
+    font-weight: 700;
+    color: #343a40;
+    margin-bottom: 1rem;
+}
+
+/* FWD_container_inquiry.css 파일 맨 아래에 추가하거나 기존 스타일을 교체 */
+
+.card-header .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+/* 확정 이후 카드 스타일 */
+.container-card.is-finalized {
+    background-color: #f8f9fa;
+    /* 배경색을 약간 다르게 */
+}
+
+/* 컨테이너 확정 후 보여질 뷰 스타일 */
+.card-body.confirmed-view {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem 1rem;
+}
+
+.confirmed-cbm-item {
+    text-align: center;
+    border: 2px solid #ced4da;
+    border-radius: 8px;
+    padding: 1.5rem 2.5rem;
+    background-color: #fff;
+}
+
+.confirmed-cbm-item .title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #007bff;
+    /* 포인트 색상 */
+    margin-bottom: 0.5rem;
+}
+
+.confirmed-cbm-item .amount {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #343a40;
+    margin-bottom: 1rem;
+}
+
+/* 상태 뱃지 스타일 추가 */
+.status-badge.completed {
+    background-color: #e2e3e5;
+    color: #383d41;
+    border: 1px solid #d6d8db;
+}
+
+/* ======== 플로팅 컨테이너 추가 버튼 스타일 ======== */
+.floating-add-btn {
+    /* 화면 기준으로 위치 고정 */
+    position: fixed;
+
+    /* 오른쪽 아래 모서리에 배치 */
+    right: 40px;
+    bottom: 40px;
+
+    /* 다른 요소들보다 항상 위에 보이도록 설정 */
+    z-index: 1000;
+
+    /* (선택사항) 입체감을 위한 그림자 효과 */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+
+    /* (선택사항) 부드러운 전환 효과 */
+    transition: all 0.2s ease-in-out;
+}
+
+/* (선택사항) 마우스 올렸을 때 살짝 위로 이동하며 커지는 효과 */
+.floating-add-btn:hover {
+    transform: translateY(-5px) scale(1.03);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================== */
+/* '컨테이너 추가' 버튼 전용 주황색 스타일 */
+/* ============================================== */
+.btn-orange {
+    background-color: #FC512C;
+    /* 선명하고 세련된 주황색 */
+    color: white;
+    border-color: #FC512C;
+    /* 테두리도 같은 색으로 통일 */
+    font-weight: 700;
+    /* 글자를 살짝 굵게 (선택사항) */
+}
+
+.btn-orange:hover {
+    background-color: #E84A28;
+    /* 기존 #FC512C 보다 살짝 어두운 색 */
+    border-color: #E84A28;
+    /* 테두리도 동일하게 변경 */
+}
+
+.cbm-item.available .amount {
+    color: var(--dark-color); /* 글자색을 어두운 색으로 강제합니다. */
+}
+
+/* /static/css/pages/FWD_container_inquiry.css 파일 맨 아래에 추가 */
+
+.cbm-item .status-color-bar {
+    width: 40px;          /* 바의 너비 */
+    height: 4px;          /* 바의 높이 */
+    border-radius: 2px;   /* 모서리를 둥글게 */
+    margin: 0 auto 12px;  /* 가운데 정렬 및 제목과의 간격 */
+}
+
+/* 프로그레스 바와 색상 통일 */
+.cbm-item .status-color-bar.confirmed {
+    background-color: #20c997; /* 확정: 녹색 계열 */
+}
+.cbm-item .status-color-bar.resale {
+    background-color: #ffc107; /* 재판매: 노랑 계열 */
+}
+.cbm-item .status-color-bar.bidding {
+    background-color: #fd7e14; /* 입찰중: 주황 계열 */
+}
+.cbm-item .status-color-bar.empty {
+    background-color: #d2d2d0; /* 입찰가능: 회색 계열 */
+}
+
+/* /static/css/pages/FWD_container_inquiry.css 파일 맨 아래에 추가 */
+
+/* 확정~운송완료 상태의 카드 본문 스타일 */
+.finalized-view {
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+/* 진행 상황 트래커 (타임라인) */
+.progress-tracker {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    width: 80%;
+    max-width: 500px;
+    position: relative;
+}
+
+.progress-tracker::before {
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background-color: #e9ecef;
+    z-index: 1;
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    width: 100px;
+}
+
+.step .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    border: 2px solid #ced4da;
+    margin-bottom: 8px;
+    transition: all 0.3s ease;
+}
+
+.step .label {
+    font-size: 13px;
+    color: #868e96;
+    transition: all 0.3s ease;
+}
+
+/* 완료된 단계 스타일 */
+.step.is-complete .dot {
+    background-color: #20c997; /* 확정 색상 */
+    border-color: #20c997;
+}
+.step.is-complete .label {
+    color: var(--dark-color);
+    font-weight: 500;
+}
+
+/* 확정 물량 정보 영역 */
+.finalized-info .info-item {
+    display: flex;
+    flex-direction: column; /* 아이템들을 세로로 쌓음 */
+    align-items: center;
+    gap: 0.5rem; /* CBM과 버튼 사이 간격 */
+}
+
+
+.finalized-info .info-item .label {
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.finalized-info .info-item .amount {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dark-color);
+}

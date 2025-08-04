@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>견적요청조회 - SEAIRHUB</title>
+    <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/layout.css}">
+    <link rel="stylesheet" th:href="@{/css/components.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/FWD_request.css}">
+</head>
+
+<body>
+    <div class="container" th:attr="data-current-user-id=${#authentication.name}">
+        <div th:replace="~{fragments/sidebar :: sidebarFragment(activeMenu='fwdRequest')}"></div>
+        
+        <main class="main-content">
+            <div th:replace="~{fragments/header :: headerFragment}"></div>
+            
+            <section class="content">
+                <h2 class="page-title">견적요청조회</h2>
+                
+			<div class="controls-bar">
+
+			    
+				<div class="sort-group">
+				    <a th:href="@{/fwd/fwdRequest(sort='createdAt,' + (${currentSortField == 'createdAt'} ? ${reverseSortDirection} : 'desc'), tradeType=${param.tradeType}, transportType=${param.transportType}, departurePort=${param.departurePort}, arrivalPort=${param.arrivalPort}, itemName=${param.itemName}, excludeClosed=${param.excludeClosed})}"
+				     class="btn btn-sort" th:classappend="${currentSortField == 'createdAt'} ? 'is-active'">
+				        등록순
+				        <span th:if="${currentSortField == 'createdAt'}" th:text="${currentSortDirection == 'ASC' ? '▲' : '▼'}"></span>
+				        <span th:unless="${currentSortField == 'createdAt'}">▼</span>
+				    </a>
+				    <a th:href="@{/fwd/fwdRequest(sort='deadline,' + (${currentSortField == 'deadline'} ? ${reverseSortDirection} : 'asc'), tradeType=${param.tradeType}, transportType=${param.transportType}, departurePort=${param.departurePort}, arrivalPort=${param.arrivalPort}, itemName=${param.itemName}, excludeClosed=${param.excludeClosed})}" class="btn btn-sort" th:classappend="${currentSortField == 'deadline'} ? 'is-active'">
+				        마감순
+				        <span th:if="${currentSortField == 'deadline'}" th:text="${currentSortDirection == 'ASC' ? '▲' : '▼'}"></span>
+				        <span th:unless="${currentSortField == 'deadline'}">▼</span>
+				    </a>
+				    <a th:href="@{/fwd/fwdRequest(sort='cargo.totalCbm,' + (${currentSortField == 'cargo.totalCbm'} ? ${reverseSortDirection} : 'desc'), tradeType=${param.tradeType}, transportType=${param.transportType}, departurePort=${param.departurePort}, arrivalPort=${param.arrivalPort}, itemName=${param.itemName}, excludeClosed=${param.excludeClosed})}" class="btn btn-sort" th:classappend="${currentSortField == 'cargo.totalCbm'} ? 'is-active'">
+				        CBM순
+				        <span th:if="${currentSortField == 'cargo.totalCbm'}" th:text="${currentSortDirection == 'ASC' ? '▲' : '▼'}"></span>
+				        <span th:unless="${currentSortField == 'cargo.totalCbm'}">▼</span>
+				    </a>
+				</div>			    
+			
+			    <div class="filter-group">
+			        <a th:href="@{/fwd/fwdRequest(tradeType=${tradeType == '수출' ? null : '수출'}, transportType=${param.transportType}, departurePort=${param.departurePort}, arrivalPort=${param.arrivalPort}, itemName=${param.itemName}, excludeClosed=${param.excludeClosed})}"
+			           class="btn" th:classappend="${tradeType == '수출'} ? 'is-active'">수출</a>
+			        <a th:href="@{/fwd/fwdRequest(tradeType=${tradeType == '수입' ? null : '수입'}, transportType=${param.transportType}, departurePort=${param.departurePort}, arrivalPort=${param.arrivalPort}, itemName=${param.itemName}, excludeClosed=${param.excludeClosed})}"
+			           class="btn" th:classappend="${tradeType == '수입'} ? 'is-active'">수입</a>
+					<span class="filter-divider">|</span>
+			        <a th:href="@{/fwd/fwdRequest(transportType=${transportType == '해상' ? null : '해상'}, tradeType=${param.tradeType}, departurePort=${param.departurePort}, arrivalPort=${param.arrivalPort}, itemName=${param.itemName}, excludeClosed=${param.excludeClosed})}"
+			           class="btn" th:classappend="${transportType == '해상'} ? 'is-active'">해상</a>
+			        <a th:href="@{/fwd/fwdRequest(transportType=${transportType == '항공' ? null : '항공'}, tradeType=${param.tradeType}, departurePort=${param.departurePort}, arrivalPort=${param.arrivalPort}, itemName=${param.itemName}, excludeClosed=${param.excludeClosed})}"
+			           class="btn" th:classappend="${transportType == '항공'} ? 'is-active'">항공</a>
+					<span class="filter-divider">|</span>
+			        <button id="btn-open-port-modal" class="btn" th:classappend="${not #strings.isEmpty(departurePort) or not #strings.isEmpty(arrivalPort)} ? 'is-active'">항구별</button>
+					<span class="filter-divider">|</span>
+			        <a th:href="@{/fwd/fwdRequest(excludeClosed=${!excludeClosed}, tradeType=${param.tradeType}, transportType=${param.transportType}, departurePort=${param.departurePort}, arrivalPort=${param.arrivalPort}, itemName=${param.itemName})}"
+			           class="btn" th:classappend="${excludeClosed} ? 'is-active'">마감 제안 제외</a>
+			    </div>
+			
+			    <form th:action="@{/fwd/fwdRequest}" method="get" class="search-group">
+			        <input type="hidden" name="tradeType" th:value="${param.tradeType}">
+			        <input type="hidden" name="transportType" th:value="${param.transportType}">
+			        <input type="hidden" name="departurePort" th:value="${param.departurePort}">
+			        <input type="hidden" name="arrivalPort" th:value="${param.arrivalPort}">
+			        <input type="hidden" name="excludeClosed" th:value="${param.excludeClosed}">
+			        <input type="text" name="itemName" class="form-input" placeholder="품명 검색" th:value="${param.itemName}">
+			        <button type="submit" class="btn btn-primary">조회</button>
+			    </form>
+			</div>
+			
+				<div class="active-filters-container">
+				    <div class="active-filters-wrapper" th:if="${!#strings.isEmpty(tradeType) or !#strings.isEmpty(transportType) or !#strings.isEmpty(departurePort) or !#strings.isEmpty(arrivalPort) or excludeClosed}">
+				        
+				        <div class="active-filter-pill" th:if="${excludeClosed}">
+				            <span>마감 제안 제외</span>
+				            <a th:href="@{/fwd/fwdRequest(page=0, excludeClosed=false, sort=${param.sort}, tradeType=${param.tradeType}, transportType=${param.transportType}, departurePort=${param.departurePort}, arrivalPort=${param.arrivalPort}, itemName=${param.itemName})}" class="btn-remove-pill">×</a>
+				        </div>
+				        
+				        <div class="active-filter-pill" th:if="${!#strings.isEmpty(tradeType)}">
+				            <span th:text="${tradeType}"></span>
+				            <a th:href="@{/fwd/fwdRequest(page=0, tradeType=null, sort=${param.sort}, transportType=${param.transportType}, departurePort=${param.departurePort}, arrivalPort=${param.arrivalPort}, itemName=${param.itemName}, excludeClosed=${param.excludeClosed})}" class="btn-remove-pill">×</a>
+				        </div>
+				
+				        <div class="active-filter-pill" th:if="${!#strings.isEmpty(transportType)}">
+				            <span th:text="${transportType}"></span>
+				            <a th:href="@{/fwd/fwdRequest(page=0, transportType=null, sort=${param.sort}, tradeType=${param.tradeType}, departurePort=${param.departurePort}, arrivalPort=${param.arrivalPort}, itemName=${param.itemName}, excludeClosed=${param.excludeClosed})}" class="btn-remove-pill">×</a>
+				        </div>
+				
+				        <div class="active-filter-pill" th:if="${!#strings.isEmpty(departurePort) or !#strings.isEmpty(arrivalPort)}">
+				            <span>항구별</span>
+				            <a th:href="@{/fwd/fwdRequest(page=0, departurePort=null, arrivalPort=null, sort=${param.sort}, tradeType=${param.tradeType}, transportType=${param.transportType}, itemName=${param.itemName}, excludeClosed=${param.excludeClosed})}" class="btn-remove-pill">×</a>
+				        </div>
+				    </div>
+				</div>
+			
+			
+			
+				
+				<div class="request-list">
+				    <div th:if="${requestsPage.empty}" class="no-results-message">조회된 요청이 없습니다.</div>
+				    
+							<article class="card request-card"
+							         th:each="req : ${requestsPage.content}"
+							         th:classappend="${req.status.name() != 'OPEN' or #temporals.createNow().isAfter(req.deadlineDateTime)} ? 'is-closed' : ''"
+				             th:attr="data-request-id=${req.id},
+				                      data-request-cbm=${req.cbm},
+				                      data-requester-id=${req.requesterId},
+				                      data-has-my-offer=${req.hasMyOffer},
+				                      data-deadline-datetime=${req.deadlineDateTime},
+				                      data-desired-arrival-date=${req.desiredArrivalDateAsLocalDate}">
+				        
+				        <div class="info">
+				            <span class="id-label" th:text="${req.idLabel}"></span>
+				            <h3 class="item-name" th:text="${req.itemName}"></h3>
+				            <div class="details">
+				                <span class="incoterms" th:text="${req.incoterms}"></span>
+				                <span class="port departure" th:text="${req.departurePort}"></span>
+				                <span class="arrow">→</span>
+				                
+				                <span class="port arrival" th:text="${req.arrivalPort}"></span>
+				                <span class="desired-arrival" th:text="' 도착희망: ' + ${req.desiredArrivalDate}" style="font-weight: 500; color: #007bff; margin-left: 12px;"></span>
+				                <span class="date-info" th:text="'등록: ' + ${req.registrationDate}" style="margin-left: 8px;"></span>
+				                <span class="deadline" th:text="' ' + ' ' + '  마감: ' + ${req.deadline}" style="margin-left: 8px;"></span>
+				                
+				            </div>
+				        </div>
+				        <div class="meta">
+				            <div class="type">
+				                <p class="trade-type" th:text="${req.tradeType}"></p>
+				                <p class="transport-type" th:text="${req.transportType}"></p>
+				            </div>
+				            <div class="cbm" th:text="${#numbers.formatDecimal(req.cbm, 1, 2)} + ' CBM'"></div>
+				        </div>
+							<div class="actions">
+							    <th:block th:if="${req.status.name() == 'OPEN' and #temporals.createNow().isBefore(req.deadlineDateTime)}">
+							        <button class="btn btn-timer btn-danger" th:attr="data-deadline-datetime=${req.deadlineDateTime}"></button>
+							
+							        <button th:if="${#authentication.name == req.requesterId}" class="btn btn-status-display" disabled>재판매중</button>
+							        
+							        <th:block th:unless="${#authentication.name == req.requesterId}">
+							            <button th:if="${req.hasMyOffer}" class="btn btn-quote" disabled>제안완료</button>
+							            <button th:unless="${req.hasMyOffer}" class="btn btn-quote btn-primary">견적제안</button>
+							        </th:block>
+							    </th:block>
+							
+							    <span th:if="${req.status.name() != 'OPEN' or #temporals.createNow().isAfter(req.deadlineDateTime)}" class="status-badge closed">
+							        마감
+							    </span>
+							</div>
+				    </article>
+				</div>
+
+				<div class="pagination-container" th:if="${!requestsPage.empty}">
+				    <nav th:with="page=${requestsPage},
+				                   startPage = ${(page.number/10) * 10},
+				                   endPage = ${T(java.lang.Math).min(startPage + 9, page.totalPages - 1)}">
+				        <ul class="pagination">
+				            <li th:classappend="${page.first} ? 'disabled'">
+				                <a th:href="@{/fwd/fwdRequest(page=0, sort=${param.sort}, tradeType=${param.tradeType}, transportType=${param.transportType}, departurePort=${param.departurePort}, arrivalPort=${param.arrivalPort}, itemName=${param.itemName}, excludeClosed=${param.excludeClosed})}">«</a>
+				            </li>
+				            <li th:classappend="${startPage == 0} ? 'disabled'">
+				                <a th:href="@{/fwd/fwdRequest(page=${startPage - 1}, sort=${param.sort}, tradeType=${param.tradeType}, transportType=${param.transportType}, departurePort=${param.departurePort}, arrivalPort=${param.arrivalPort}, itemName=${param.itemName}, excludeClosed=${param.excludeClosed})}">‹</a>
+				            </li>
+				
+				            <li th:each="i : ${#numbers.sequence(startPage, endPage)}"
+				                th:classappend="${i == page.number} ? 'active'">
+				                <a th:href="@{/fwd/fwdRequest(page=${i}, sort=${param.sort}, tradeType=${param.tradeType}, transportType=${param.transportType}, departurePort=${param.departurePort}, arrivalPort=${param.arrivalPort}, itemName=${param.itemName}, excludeClosed=${param.excludeClosed})}" th:text="${i + 1}"></a>
+				            </li>
+				
+				            <li th:classappend="${endPage >= page.totalPages - 1} ? 'disabled'">
+				                <a th:href="@{/fwd/fwdRequest(page=${endPage + 1}, sort=${param.sort}, tradeType=${param.tradeType}, transportType=${param.transportType}, departurePort=${param.departurePort}, arrivalPort=${param.arrivalPort}, itemName=${param.itemName}, excludeClosed=${param.excludeClosed})}">›</a>
+				            </li>
+				            <li th:classappend="${page.last} ? 'disabled'">
+				                <a th:href="@{/fwd/fwdRequest(page=${page.totalPages - 1}, sort=${param.sort}, tradeType=${param.tradeType}, transportType=${param.transportType}, departurePort=${param.departurePort}, arrivalPort=${param.arrivalPort}, itemName=${param.itemName}, excludeClosed=${param.excludeClosed})}">»</a>
+				            </li>
+				        </ul>
+				    </nav>
+				</div>
+            </section>
+        </main>
+    </div>
+
+    <template id="offer-form-template">
+        <div class="offer-form-expand">
+            <div class="offer-form-container">
+                <div class="form-main-column">
+                    <div class="form-grid">
+                        <label class="form-label">내 컨테이너</label>
+                        <select class="form-input container-select"><option value="">컨테이너를 선택하세요.</option></select>
+                        <label class="form-label">제안가능 용량</label>
+                        <input type="text" class="form-input available-capacity" placeholder="컨테이너 선택 시 자동 입력" readonly>
+                        <label class="form-label">입찰가</label>
+                        <div class="price-input-wrapper">
+                            <input type="number" class="form-input bid-price" placeholder="금액 입력">
+                            <select class="form-input currency-select">
+                                <option value="USD">$ (달러)</option>
+                                <option value="KRW">₩ (원)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-info-column">
+                    <div class="info-box">
+                        <p class="form-status"></p>
+                        <ul>
+                            <li><strong>견적 가능 판단 기준</strong></li>
+                            <li>1. 컨테이너의 출발항/도착항 일치</li>
+                            <li>2. 컨테이너 잔여용량 > 요청용량</li>
+                        </ul>
+                        <div class="form-actions">
+                            <button class="btn btn-cancel">취소</button>
+                            <button class="btn btn-submit-bid btn-primary" disabled>입찰하기</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+    
+    <div id="port-modal" class="modal-wrapper" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>항구별 필터 선택</h3>
+            <button class="btn-close">×</button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="port-section">
+                <h4>출발항</h4>
+                <div class="port-options" id="departure-port-options">
+                    <label><input type="radio" name="departure-port" value="도쿄" th:checked="${param.departurePort == '도쿄'}"> 도쿄</label>
+                    <label><input type="radio" name="departure-port" value="부산" th:checked="${param.departurePort == '부산'}"> 부산</label>
+                    <label><input type="radio" name="departure-port" value="상해" th:checked="${param.departurePort == '상해'}"> 상해</label>
+                    <label><input type="radio" name="departure-port" value="싱가포르" th:checked="${param.departurePort == '싱가포르'}"> 싱가포르</label>
+                    <label><input type="radio" name="departure-port" value="인천" th:checked="${param.departurePort == '인천'}"> 인천</label>
+                    <label><input type="radio" name="departure-port" value="오사카" th:checked="${param.departurePort == '오사카'}"> 오사카</label>
+                </div>
+            </div>
+            <div class="port-section">
+                <h4>도착항</h4>
+                <div class="port-options" id="arrival-port-options">
+                    <label><input type="radio" name="arrival-port" value="도쿄" th:checked="${param.arrivalPort == '도쿄'}"> 도쿄</label>
+                    <label><input type="radio" name="arrival-port" value="부산" th:checked="${param.arrivalPort == '부산'}"> 부산</label>
+                    <label><input type="radio" name="arrival-port" value="상해" th:checked="${param.arrivalPort == '상해'}"> 상해</label>
+                    <label><input type="radio" name="arrival-port" value="싱가포르" th:checked="${param.arrivalPort == '싱가포르'}"> 싱가포르</label>
+                    <label><input type="radio" name="arrival-port" value="인천" th:checked="${param.arrivalPort == '인천'}"> 인천</label>
+                    <label><input type="radio" name="arrival-port" value="오사카" th:checked="${param.arrivalPort == '오사카'}"> 오사카</label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="btn-reset-port-filter" class="btn btn-dark">초기화</button>
+            <button id="btn-apply-port-filter" class="btn btn-primary">적용</button>
+        </div>
+    </div>
+</div>
+
+    <script th:src="@{/js/fwd-request-timer.js}"></script>
+    <script th:src="@{/js/fwd-request-proposal.js}"></script>
+    <script th:src="@{/js/fwd-request-filter.js}"></script>
+    
+    
+</body>
+</html>

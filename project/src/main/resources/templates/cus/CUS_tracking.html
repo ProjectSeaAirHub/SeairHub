@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>운송중인 화물 - The 채움+</title>
+    <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/layout.css}">
+    <link rel="stylesheet" th:href="@{/css/components.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/FWD_my_posted_requests.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/CUS_request.css}">
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/CUS_sidebar :: cusSidebarFragment(activeMenu='cusTracking')}"></div>
+    <main class="main-content">
+        <div th:replace="~{fragments/header :: headerFragment}"></div>
+        <section class="content">
+            <div id="view-container">
+                <div id="list-view">
+                    <h2 class="page-title">운송중인 화물</h2>
+                    <div class="controls-bar">
+                        <div class="filter-group">
+                            <a th:href="@{/cus/tracking(status=null, itemName=${itemName})}" class="btn" th:classappend="${status == null} ? 'is-active'">전체</a>
+                            <a th:href="@{/cus/tracking(status='ACCEPTED', itemName=${itemName})}" class="btn filter-spacer" th:classappend="${status == 'ACCEPTED'} ? 'is-active'">낙찰</a>
+                            <a th:href="@{/cus/tracking(status='CONFIRMED', itemName=${itemName})}" class="btn" th:classappend="${status == 'CONFIRMED'} ? 'is-active'">확정</a>
+                            <a th:href="@{/cus/tracking(status='SHIPPED', itemName=${itemName})}" class="btn" th:classappend="${status == 'SHIPPED'} ? 'is-active'">선적</a>
+                            <a th:href="@{/cus/tracking(status='COMPLETED', itemName=${itemName})}" class="btn" th:classappend="${status == 'COMPLETED'} ? 'is-active'">도착</a>
+                        </div>
+
+                        <form th:action="@{/cus/tracking}" method="get" class="search-group" style="margin-left: auto;">
+                            <input type="hidden" name="status" th:value="${status}">
+                            <input type="text" name="itemName" class="form-input" placeholder="품명 검색" th:value="${itemName}">
+                            <button type="submit" class="btn btn-primary">조회</button>
+                        </form>
+                    </div>
+                    <div class="posted-request-list">
+                        <div th:if="${requestPage.empty}" class="no-results-message">운송중인 화물이 없습니다.</div>
+
+                        <div class="request-item-container" th:each="req : ${requestPage.content}">
+                            <article class="card request-card" th:attr="data-request-id=${req.requestId}">
+                                <th:block th:if="${req.status == 'CLOSED'}">
+                                    <div class="card-body-centered">
+                                        <div class="info-group-left">
+                                            <h3 class="item-name" th:text="${req.itemName}"></h3>
+                                            <p class="cbm" th:text="${#numbers.formatDecimal(req.cbm, 2, 'COMMA', 2, 'POINT')} + ' CBM'"></p>
+                                        </div>
+                                        <div class="progress-tracker-large">
+                                            <div class="step" th:classappend="${#lists.contains({'ACCEPTED','CONFIRMED','SHIPPED','COMPLETED','RESOLD'}, req.detailedStatus)} ? 'is-complete' : ''"><div class="dot"></div><div class="label">낙찰</div></div>
+                                            <div class="step" th:classappend="${#lists.contains({'CONFIRMED','SHIPPED','COMPLETED'}, req.detailedStatus)} ? 'is-complete' : ''"><div class="dot"></div><div class="label">컨테이너 확정</div></div>
+                                            <div class="step" th:classappend="${#lists.contains({'SHIPPED','COMPLETED'}, req.detailedStatus)} ? 'is-complete' : ''"><div class="dot"></div><div class="label">선적완료</div></div>
+                                            <div class="step" th:classappend="${#lists.contains({'COMPLETED'}, req.detailedStatus)} ? 'is-complete' : ''"><div class="dot"></div><div class="label">운송완료</div></div>
+                                        </div>
+                                        <div class="winner-info">
+                                            <span class="label">담당 포워더</span>
+                                            <span class="company-name" th:text="${req.winningBidderCompanyName}"></span>
+                                        </div>
+                                    </div>
+                                </th:block>
+                            </article>
+                        </div>
+                    </div>
+                    <div class="pagination-container" th:if="${!requestPage.empty}">
+                        <nav th:with="page=${requestPage}, startPage = ${(page.number/10) * 10}, endPage = ${T(java.lang.Math).min(startPage + 9, page.totalPages - 1)}">
+                            <ul class="pagination">
+                                <li th:classappend="${page.first} ? 'disabled'"><a th:href="@{/cus/tracking(page=0, status=${status}, itemName=${itemName})}">«</a></li>
+                                <li th:classappend="${startPage == 0} ? 'disabled'"><a th:href="@{/cus/tracking(page=${startPage - 1}, status=${status}, itemName=${itemName})}">‹</a></li>
+                                <li th:each="i : ${#numbers.sequence(startPage, endPage)}" th:classappend="${i == page.number} ? 'active'"><a th:href="@{/cus/tracking(page=${i}, status=${status}, itemName=${itemName})}" th:text="${i + 1}"></a></li>
+                                <li th:classappend="${endPage >= page.totalPages - 1} ? 'disabled'"><a th:href="@{/cus/tracking(page=${endPage + 1}, status=${status}, itemName=${itemName})}">›</a></li>
+                                <li th:classappend="${page.last} ? 'disabled'"><a th:href="@{/cus/tracking(page=${page.totalPages - 1}, status=${status}, itemName=${itemName})}">»</a></li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

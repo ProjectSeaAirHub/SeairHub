@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>나의요청 관리 - The 채움+</title>
+    <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/layout.css}">
+    <link rel="stylesheet" th:href="@{/css/components.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/FWD_my_posted_requests.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/CUS_request.css}">
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/CUS_sidebar :: cusSidebarFragment(activeMenu='cusRequest')}"></div>
+    <main class="main-content">
+        <div th:replace="~{fragments/header :: headerFragment}"></div>
+        <section class="content">
+            <div id="view-container">
+                <div id="list-view">
+                    <h2 class="page-title">나의요청 관리</h2>
+						<div class="controls-bar">
+						    <div class="sort-group">
+						        <a th:href="@{/cus/cusRequest(sort='createdAt,' + (${currentSortField == 'createdAt'} ? ${reverseSortDirection} : 'desc'), excludeClosed=${excludeClosed}, itemName=${itemName})}"
+						           class="btn btn-sort" th:classappend="${currentSortField == 'createdAt'} ? 'is-active'">
+						            등록순
+						            <span th:if="${currentSortField == 'createdAt'}" th:text="${#strings.equals(reverseSortDirection, 'asc')} ? '▲' : '▼'"></span>
+						            <span th:unless="${currentSortField == 'createdAt'}">▼</span>
+						        </a>
+						        <a th:href="@{/cus/cusRequest(sort='deadline,' + (${currentSortField == 'deadline'} ? ${reverseSortDirection} : 'asc'), excludeClosed=${excludeClosed}, itemName=${itemName})}"
+						           class="btn btn-sort" th:classappend="${currentSortField == 'deadline'} ? 'is-active'">
+						            마감순
+						            <span th:if="${currentSortField == 'deadline'}" th:text="${#strings.equals(reverseSortDirection, 'asc')} ? '▲' : '▼'"></span>
+						            <span th:unless="${currentSortField == 'deadline'}">▼</span>
+						        </a>
+						    </div>
+							<div class="filter-group">
+							    <a th:href="@{/cus/cusRequest(excludeClosed=${!excludeClosed}, itemName=${itemName})}"
+							       class="btn filter-spacer" th:classappend="${excludeClosed} ? 'is-active'">마감 제안 제외</a>
+							</div>
+						
+						    <form th:action="@{/cus/cusRequest}" method="get" class="search-group" style="margin-left: auto;">
+						        <input type="hidden" name="status" th:value="${status}">
+						        <input type="hidden" name="excludeClosed" th:value="${excludeClosed}">
+						        
+						        <input type="text" name="itemName" class="form-input" placeholder="품명 검색" th:value="${itemName}">
+						        <button type="submit" class="btn btn-primary">조회</button>
+						    </form>
+						</div>
+                    <div class="posted-request-list">
+                        <div th:if="${requestPage.empty}" class="no-results-message">등록된 요청이 없습니다. 우측 하단 버튼으로 새 요청을 등록해보세요.</div>
+
+                        <div class="request-item-container" th:each="req : ${requestPage.content}">
+					<article class="card request-card" th:attr="data-request-id=${req.requestId}"
+					         th:classappend="${req.status == 'OPEN' and #temporals.createNow().isAfter(req.deadlineDateTime)} ? 'is-closed' : ''">
+					
+					    <th:block th:if="${req.status == 'OPEN' and #temporals.createNow().isBefore(req.deadlineDateTime)}">
+					        <div class="info">
+					            <h3 class="item-name" th:text="${req.itemName}"></h3>
+					            <p class="cbm" th:text="${#numbers.formatDecimal(req.cbm, 2, 'COMMA', 2, 'POINT')} + ' CBM'"></p>
+					            <p class="deadline" th:text="'마감: ' + ${req.deadline}"></p>
+					            <p class="desired-arrival-date" th:if="${req.desiredArrivalDate != null}"
+					               th:text="'희망 도착: ' + ${#temporals.format(req.desiredArrivalDate, 'yyyy-MM-dd')}"></p>
+					        </div>
+					        <div class="actions">
+					            <div class="actions-open">
+					                <span class="bidder-count" th:text="'제안 ' + ${req.bidderCount} + '건 도착'"></span>
+					                <button class="btn btn-sm btn-details">제안 보기</button>
+					            </div>
+					        </div>
+					    </th:block>
+					
+					    <th:block th:if="${req.status == 'CLOSED'}">
+					        <div class="card-body-centered">
+					            <div class="info-group-left">
+					                <h3 class="item-name" th:text="${req.itemName}"></h3>
+					                <p class="cbm" th:text="${#numbers.formatDecimal(req.cbm, 2, 'COMMA', 2, 'POINT')} + ' CBM'"></p>
+					            </div>
+					
+					            <div class="progress-tracker-large">
+					                <div class="step" th:classappend="${#lists.contains({'ACCEPTED','CONFIRMED','SHIPPED','COMPLETED','RESOLD'}, req.detailedStatus)} ? 'is-complete' : ''"><div class="dot"></div><div class="label">낙찰</div></div>
+					                <div class="step" th:classappend="${#lists.contains({'CONFIRMED','SHIPPED','COMPLETED'}, req.detailedStatus)} ? 'is-complete' : ''"><div class="dot"></div><div class="label">컨테이너 확정</div></div>
+					                <div class="step" th:classappend="${#lists.contains({'SHIPPED','COMPLETED'}, req.detailedStatus)} ? 'is-complete' : ''"><div class="dot"></div><div class="label">선적완료</div></div>
+					                <div class="step" th:classappend="${#lists.contains({'COMPLETED'}, req.detailedStatus)} ? 'is-complete' : ''"><div class="dot"></div><div class="label">운송완료</div></div>
+					            </div>
+					
+					            <div class="winner-info">
+					                <span class="label">담당 포워더</span>
+					                <span class="company-name" th:text="${req.winningBidderCompanyName}"></span>
+					            </div>
+					        </div>
+					    </th:block>
+					
+					    <th:block th:if="${req.status == 'OPEN' and #temporals.createNow().isAfter(req.deadlineDateTime)}">
+					        <div class="info">
+					             <h3 class="item-name" th:text="${req.itemName}"></h3>
+					            <p class="cbm" th:text="${#numbers.formatDecimal(req.cbm, 2, 'COMMA', 2, 'POINT')} + ' CBM'"></p>
+					            <p class="deadline" th:text="'마감: ' + ${req.deadline}"></p>
+					            <p class="desired-arrival-date" th:if="${req.desiredArrivalDate != null}"
+					               th:text="'희망 도착: ' + ${#temporals.format(req.desiredArrivalDate, 'yyyy-MM-dd')}"></p>
+					        </div>
+					        <div class="actions">
+					            <span class="status-badge closed">마감</span>
+					        </div>
+					    </th:block>
+					
+					</article>
+                            <div class="offer-details-container"></div>
+                        </div>
+
+                    </div>
+					<div class="pagination-container" th:if="${!requestPage.empty}">
+					    <nav th:with="page=${requestPage},
+					                   startPage = ${(page.number/10) * 10},
+					                   endPage = ${T(java.lang.Math).min(startPage + 9, page.totalPages - 1)}">
+					        <ul class="pagination">
+					            <li th:classappend="${page.first} ? 'disabled'">
+					                <a th:href="@{/cus/cusRequest(page=0, status=${status}, excludeClosed=${excludeClosed}, itemName=${itemName})}">«</a>
+					            </li>
+					            <li th:classappend="${startPage == 0} ? 'disabled'">
+					                <a th:href="@{/cus/cusRequest(page=${startPage - 1}, status=${status}, excludeClosed=${excludeClosed}, itemName=${itemName})}">‹</a>
+					            </li>
+					
+					            <li th:each="i : ${#numbers.sequence(startPage, endPage)}"
+					                th:classappend="${i == page.number} ? 'active'">
+					                <a th:href="@{/cus/cusRequest(page=${i}, status=${status}, excludeClosed=${excludeClosed}, itemName=${itemName})}" th:text="${i + 1}"></a>
+					            </li>
+					
+					            <li th:classappend="${endPage >= page.totalPages - 1} ? 'disabled'">
+					                <a th:href="@{/cus/cusRequest(page=${endPage + 1}, status=${status}, excludeClosed=${excludeClosed}, itemName=${itemName})}">›</a>
+					            </li>
+					            <li th:classappend="${page.last} ? 'disabled'">
+					                <a th:href="@{/cus/cusRequest(page=${page.totalPages - 1}, status=${status}, excludeClosed=${excludeClosed}, itemName=${itemName})}">»</a>
+					            </li>
+					        </ul>
+					    </nav>
+					</div>
+                </div>
+                <div id="detail-view" style="display: none;"></div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<template id="offer-list-template">
+    <table class="bids-table">
+        <thead>
+            <tr>
+                <th>제안자 (포워더)</th>
+                <th>컨테이너 ID</th>
+                <th>제안 운임</th>
+                <th>ETD</th>
+                <th>ETA</th>
+                <th>관리</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</template>
+
+<button id="open-request-modal" class="fab">+</button>
+
+<div id="request-modal" class="modal-wrapper">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>신규 화물 요청</h3>
+            <button class="btn-close">×</button>
+        </div>
+        <form id="new-request-form">
+            <div class="modal-body">
+                <h4>화물 정보</h4>
+                <div class="form-grid">
+                    <input type="text" id="itemName" class="form-input" placeholder="품명 (예: 자동차 부품)" required>
+                    <select id="incoterms" class="form-input"><option value="FOB">FOB</option><option value="CIF">CIF</option></select>
+                    <input type="number" id="totalCbm" class="form-input" placeholder="총 CBM (예: 15.5)" step="0.01" required>
+                    <label style="display:flex; align-items:center; gap: 8px;"><input type="checkbox" id="isDangerous"> 위험물 포함</label>
+                </div>
+                <h4>운송 정보</h4>
+                <div class="form-grid">
+					<select id="departurePort" class="form-input" required>
+					    <option value="" disabled selected>출발항 선택</option>
+					    <option value="도쿄">도쿄</option>
+					    <option value="부산">부산</option>
+					    <option value="상해">상해</option>
+					    <option value="싱가포르">싱가포르</option>
+					    <option value="인천">인천</option>
+					    <option value="오사카">오사카</option>
+					</select>
+					<select id="arrivalPort" class="form-input" required>
+					    <option value="" disabled selected>도착항 선택</option>
+					    <option value="도쿄">도쿄</option>
+					    <option value="부산">부산</option>
+					    <option value="상해">상해</option>
+					    <option value="싱가포르">싱가포르</option>
+					    <option value="인천">인천</option>
+					    <option value="오사카">오사카</option>
+					</select>
+                    <div class="form-row" style="grid-column: 1 / -1;">
+                        <label for="desiredArrivalDate" style="font-size:14px; margin-bottom: 4px; display:block;">희망 도착일</label>
+                        <input type="date" id="desiredArrivalDate" class="form-input">
+                    </div>
+                    <div class="form-row" style="grid-column: 1 / -1;">
+                        <label for="desiredArrivalDate" style="font-size:14px; margin-bottom: 4px; display:block;">요청 마감일</label>
+                        <input type="datetime-local" id="deadline" class="form-input">
+                    </div>
+                    <select id="tradeType" class="form-input"><option value="수출">수출</option><option value="수입">수입</option></select>
+                    <select id="transportType" class="form-input"><option value="해상">해상</option><option value="항공">항공</option></select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-cancel">취소</button>
+                <button type="submit" class="btn btn-primary">등록하기</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script th:src="@{/js/CUS_request.js}"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<!-- 이 파일은 직접 보여지는 파일이 아니므로 <body> 태그 등은 필요 없습니다. -->
+
+<!-- th:fragment="headerFragment" 로 이 부분을 '헤더 프래그먼트'로 정의합니다. -->
+<header class="header" th:fragment="headerFragment">
+    <div class="header-logo">
+        <a th:href="@{/}"> <!-- 로고 클릭 시 메인 페이지로 이동하도록 링크 추가 -->
+            <img th:src="@{/images/logo_long.png}" alt="SEAIRHUB" height="24">
+        </a>
+    </div>
+    <div class="user-menu">
+        <!-- 이제 이 프래그먼트 하나만 수정하면 모든 페이지에 반영됩니다. -->
+        <span th:text="${#authentication.principal.userName}">사용자 이름</span>
+        <a href="#" class="btn btn-user-info">내정보</a>
+        <span>알림(0)</span>
+        <a th:href="@{/logout}">로그아웃</a>
+    </div>
+</header>
+
+</html>

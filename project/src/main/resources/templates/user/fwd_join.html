@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEAIRHUB - 회원가입</title>
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+    <script th:src="@{/js/jquery-3.7.1.js}"></script> 
+    <script defer th:src="@{/js/join.js}"></script>
+</head>
+ 
+<body>
+    <main class="login-container">
+        <!-- 로고 -->
+        <div class="logo">
+            <span class="logo-icon">G</span>SEAIRHUB
+        </div>
+
+        <!-- ***** 이것이 유일한 <form> 태그여야 합니다 ***** -->
+        <!-- ***** [수정] form 태그에 enctype 추가 ***** -->
+        <form id="joinForm" class="login-form" action="/fwd/joinProc" method="POST" enctype="multipart/form-data">
+            
+            <!-- 1. 제목을 조건부로 변경 -->
+            <h2 style="text-align: center; margin-bottom: 30px;">
+                <span th:if="${social_email}">소셜 계정 회원가입</span>
+                <span th:unless="${social_email}">회원가입</span>
+            </h2>
+            
+            <!-- 회원가입 실패 메시지 -->
+            <th:block th:if="${param.error}">
+                <div style="color: red; font-size: 0.8em; text-align: center; margin: 10px 0;">
+                    회원가입에 실패했습니다. 다시 시도해주세요.
+                </div>
+            </th:block>
+
+            <!-- 2. 카카오 연동 시에만 provider 정보를 hidden input으로 추가 -->
+            <th:block th:if="${kakao_email}">
+                <input type="hidden" name="provider" th:value="${session.kakao_provider}" />
+                <input type="hidden" name="providerId" th:value="${session.kakao_provider_id}" />
+            </th:block>
+            
+            <div class="form-group">
+                <input type="text" id="userId" name="userId" placeholder="아이디를 입력해주세요." required>
+            </div>
+            <div id="confirmId"></div>
+
+			<!-- 이메일 입력창을 조건부로 변경 -->
+			<div class="form-group">
+			    <input type="email" id="email" name="email" placeholder="이메일을 입력해주세요." required
+			           th:value="${social_email}"
+			           th:readonly="${social_email != null}">
+			</div>
+			
+            <div id="confirmEmail"></div>
+
+            <div class="form-group">
+                <input type="password" id="userPwd" name="userPwd" placeholder="비밀번호를 입력해주세요." required>
+            </div>
+            
+            <div class="form-group">
+                <input type="password" id="userPwdConfirm" placeholder="비밀번호를 다시 입력해주세요." required>
+            </div>
+            <div id="confirmPwd"></div>
+            
+			<div class="form-group">
+			    <input type="text" id="userName" name="userName" placeholder="이름을 입력해주세요." required>
+			</div>
+			
+			<div class="form-group">
+			    <input type="tel" id="phoneNum" name="phoneNum" placeholder="전화번호 ('-' 없이 입력)" required>
+			</div>
+			
+			<div class="form-group">
+                <input type="text" id="companyName" name="companyName" placeholder="회사 이름을 입력해주세요.">
+            </div>
+			
+			
+			<div class="form-group">
+			    <input type="text" id="businessNum" name="businessNum" placeholder="사업자등록번호를 입력해주세요.">
+			</div>
+			
+			<!-- [수정] 사업자등록증 첨부 부분의 구조를 아래처럼 변경합니다. -->
+			<div class="form-group file-upload-group">
+			    <label for="businessLicenseFile">사업자등록증 첨부</label>
+			    <div class="file-input-wrapper">
+			        <input type="text" readonly class="file-display" placeholder="선택된 파일 없음">
+			        <label for="businessLicenseFile" class="btn-file-select">파일 선택</label>
+			        <input type="file" id="businessLicenseFile" name="businessLicenseFile" class="hidden-file-input">
+			    </div>
+			</div>
+
+            <button type="button" id="joinBtn" class="btn btn-primary">회원가입</button>
+        </form>
+
+        <!-- 로그인 링크 -->
+        <div class="signup-link">
+            <div class="divider">
+                <span>또는</span>
+            </div>
+            <a href="/login">이미 계정이 있으신가요? 로그인하기</a>
+        </div>
+    </main>
+</body>
+
+</html>

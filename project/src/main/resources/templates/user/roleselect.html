@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEAIRHUB - 회원 유형 선택</title>
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+    <style>
+        .role-selection {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin: 40px 0;
+        }
+        
+        .role-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 40px 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 200px;
+        }
+        
+        .role-card:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .role-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        .role-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .role-description {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <main class="login-container">
+        <!-- 로고 -->
+        <a href="/" class="logo">
+            <img th:src="@{/images/logo_long.png}" alt="SEAIRHUB">
+        </a>
+
+        <div class="login-form">
+            <h2 style="text-align: center; margin-bottom: 30px;">회원 유형을 선택해주세요</h2>
+            
+            <div class="role-selection">
+                <div class="role-card" onclick="location.href='/fwd/join'">
+                    <span class="role-icon">🚢</span>
+                    <div class="role-title">포워더</div>
+                    <div class="role-description">화물 운송 및<br>물류 서비스 제공</div>
+                </div>
+                
+                <div class="role-card" onclick="location.href='/cus/join'">
+                    <span class="role-icon">📦</span>
+                    <div class="role-title">화주</div>
+                    <div class="role-description">화물 운송<br>서비스 이용</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 로그인 링크 -->
+        <div class="signup-link">
+            <div class="divider">
+                <span>또는</span>
+            </div>
+            <a href="/login">이미 계정이 있으신가요? 로그인하기</a>
+        </div>
+    </main>
+</body>
+</html>

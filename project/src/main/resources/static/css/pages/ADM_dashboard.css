@@ -1,0 +1,69 @@
+/* /static/css/pages/ADM_dashboard.css */
+
+/* [추가] 대시보드 카드 그리드 */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-bottom: 40px;
+}
+
+.dashboard-card {
+    background-color: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 24px;
+}
+
+.dashboard-card h3 {
+    font-size: 18px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 16px;
+}
+
+.metric-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+.metric-item:last-child {
+    margin-bottom: 0;
+}
+
+.metric-label {
+    color: var(--text-color-secondary);
+}
+
+.metric-value {
+    font-weight: 700;
+    font-size: 20px;
+}
+
+/* 주요 알림 카드는 강조 */
+.alert-card .metric-value {
+    color: var(--danger-color);
+}
+
+/* 차트 섹션 */
+.chart-section {
+    background-color: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 24px;
+}
+
+.chart-section h3 {
+    font-size: 18px;
+    margin-bottom: 24px;
+}
+
+.chart-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+    height: 500px;
+}

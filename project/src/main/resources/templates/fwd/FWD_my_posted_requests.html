@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나의요청조회 - The 채움+</title>
+    <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/layout.css}">
+    <link rel="stylesheet" th:href="@{/css/components.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/FWD_my_posted_requests.css}">
+</head>
+
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebarFragment(activeMenu='my-posted-requests')}"></div>
+    <main class="main-content">
+        <div th:replace="~{fragments/header :: headerFragment}"></div>
+        <section class="content">
+            <div id="view-container">
+                <div id="list-view">
+                    <h2 class="page-title">나의요청조회</h2>
+						<div class="controls-bar">
+						    <div class="filter-group">
+						        <a th:href="@{/fwd/my-posted-requests(status=null)}" class="btn" th:classappend="${status == null} ? 'is-active'">전체</a>
+						        
+						        <a th:href="@{/fwd/my-posted-requests(status='OPEN')}" class="btn filter-spacer" th:classappend="${status == 'OPEN'} ? 'is-active'">입찰 진행 중</a>
+						        
+						        <a th:href="@{/fwd/my-posted-requests(status='ACCEPTED')}" class="btn filter-spacer" th:classappend="${status == 'ACCEPTED'} ? 'is-active'">낙찰</a>
+						        <a th:href="@{/fwd/my-posted-requests(status='CONFIRMED')}" class="btn" th:classappend="${status == 'CONFIRMED'} ? 'is-active'">확정</a>
+						        <a th:href="@{/fwd/my-posted-requests(status='SHIPPED')}" class="btn" th:classappend="${status == 'SHIPPED'} ? 'is-active'">선적</a>
+						        <a th:href="@{/fwd/my-posted-requests(status='COMPLETED')}" class="btn" th:classappend="${status == 'COMPLETED'} ? 'is-active'">도착</a>
+						    </div>
+						</div>
+<div class="posted-request-list">
+    <div th:if="${myRequestsPage.empty}" class="no-results-message">조회된 요청이 없습니다.</div>
+
+    <div class="request-item-container" th:each="req : ${myRequestsPage.content}">
+
+        <article class="card request-card" th:attr="data-request-id=${req.requestId}">
+            <th:block th:if="${req.status == 'OPEN'}">
+                <div class="info">
+                    <h3 class="item-name" th:text="${req.itemName}"></h3>
+                    <p class="cbm" th:text="${#numbers.formatDecimal(req.cbm, 2, 'COMMA', 2, 'POINT')} + ' CBM'"></p>
+                    <p class="deadline" th:text="'마감: ' + ${req.deadline}"></p>
+                </div>
+                <div class="actions">
+                    <div class="actions-open">
+                        <span class="bidder-count" th:text="'입찰 ' + ${req.bidderCount} + '건'"></span>
+                        <button class="btn btn-sm btn-details">입찰 현황 보기</button>
+                    </div>
+                </div>
+            </th:block>
+
+            <th:block th:if="${req.status == 'CLOSED'}">
+                <div class="card-body-centered">
+                    <div class="info-group-left">
+                        <h3 class="item-name" th:text="${req.itemName}"></h3>
+                        <p class="cbm" th:text="${#numbers.formatDecimal(req.cbm, 2, 'COMMA', 2, 'POINT')} + ' CBM'"></p>
+                    </div>
+                    <div class="progress-tracker-large">
+                        <div class="step" th:classappend="${#lists.contains({'ACCEPTED','CONFIRMED','SHIPPED','COMPLETED','RESOLD'}, req.detailedStatus)} ? 'is-complete' : ''"><div class="dot"></div><div class="label">낙찰</div></div>
+                        <div class="step" th:classappend="${#lists.contains({'CONFIRMED','SHIPPED','COMPLETED'}, req.detailedStatus)} ? 'is-complete' : ''"><div class="dot"></div><div class="label">컨테이너 확정</div></div>
+                        <div class="step" th:classappend="${#lists.contains({'SHIPPED','COMPLETED'}, req.detailedStatus)} ? 'is-complete' : ''"><div class="dot"></div><div class="label">선적완료</div></div>
+                        <div class="step" th:classappend="${#lists.contains({'COMPLETED'}, req.detailedStatus)} ? 'is-complete' : ''"><div class="dot"></div><div class="label">운송완료</div></div>
+                    </div>
+                    <div class="winner-info">
+                        <span class="label">담당 포워더</span>
+                        <span class="company-name" th:text="${req.winningBidderCompanyName}"></span>
+                    </div>
+                </div>
+            </th:block>
+        </article>
+
+        <div class="offer-details-container"></div>
+                    </div>
+					<div class="pagination-container" th:if="${!myRequestsPage.empty}">
+					    <nav th:with="page=${myRequestsPage},
+					                   startPage = ${(page.number/10) * 10},
+					                   endPage = ${T(java.lang.Math).min(startPage + 9, page.totalPages - 1)}">
+					        <ul class="pagination">
+					            <li th:classappend="${page.first} ? 'disabled'"><a th:href="@{/fwd/my-posted-requests(page=0, status=${status})}">«</a></li>
+					            <li th:classappend="${startPage == 0} ? 'disabled'"><a th:href="@{/fwd/my-posted-requests(page=${startPage - 1}, status=${status})}">‹</a></li>
+					
+					            <li th:each="i : ${#numbers.sequence(startPage, endPage)}"
+					                th:classappend="${i == page.number} ? 'active'">
+					                <a th:href="@{/fwd/my-posted-requests(page=${i}, status=${status})}" th:text="${i + 1}"></a>
+					            </li>
+					
+					            <li th:classappend="${endPage >= page.totalPages - 1} ? 'disabled'"><a th:href="@{/fwd/my-posted-requests(page=${endPage + 1}, status=${status})}">›</a></li>
+					            <li th:classappend="${page.last} ? 'disabled'"><a th:href="@{/fwd/my-posted-requests(page=${page.totalPages - 1}, status=${status})}">»</a></li>
+					        </ul>
+					    </nav>
+					</div>
+             <template id="bidders-list-template">
+                <table class="bids-table">
+                    <thead>
+                        <tr>
+                            <th>입찰자</th>
+                            <th>컨테이너ID</th>
+                            <th>제안 운임</th>
+                            <th>ETD</th>
+                            <th>ETA</th>
+                            <th>관리</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </template>
+                </div>
+                <div id="detail-view" style="display: none;"></div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<template id="bidders-list-template">
+    <div class="bidders-detail-wrapper">
+        <div class="detail-header">
+            <button class="btn btn-sm btn-back">← 목록으로</button>
+            <h2 class="page-title">입찰 현황</h2>
+        </div>
+        <div class="bidders-list">
+             <table class="bids-table">
+                 <thead>
+                     <tr>
+                         <th>입찰자</th>
+                         <th>컨테이너ID</th>
+                         <th>제안 운임</th>
+                         <th>ETD</th>
+                         <th>ETA</th>
+                         <th>관리</th>
+                     </tr>
+                 </thead>
+                 <tbody></tbody>
+             </table>
+        </div>
+    </div>
+</template>
+
+<script th:src="@{/js/fwd_my_posted_requests.js}"></script>
+</body>
+</html>

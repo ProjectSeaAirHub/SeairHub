@@ -1,0 +1,283 @@
+/* FWD_my_offers.css */
+
+/* 전체 목록 컨테이너 */
+.offer-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    /* 컨트롤 바와의 간격 */
+}
+
+/* 개별 제안 카드 */
+.offer-card {
+    background-color: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    transition: box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column;
+}
+
+.offer-card:hover {
+    border-color: #ced4da;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* 카드 상단 요약 정보 영역 */
+.card-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.card-summary .info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.request-id-label {
+    font-weight: 700;
+    color: #343a40;
+    font-size: 1.05rem;
+    /* 살짝 키움 */
+}
+
+.details {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    /* 창이 좁아질 때 줄바꿈 */
+    gap: 0.5rem 0.75rem;
+    /* 세로, 가로 간격 */
+    font-size: 0.875rem;
+    color: #495057;
+}
+
+.details .port {
+    font-weight: 500;
+}
+
+.details .arrow {
+    color: #868e96;
+}
+
+.details .cbm {
+    margin-left: 0.5rem;
+    padding: 3px 8px;
+    background-color: #f1f3f5;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 0.8rem;
+}
+
+.card-summary {
+    display: flex;
+    align-items: center; /* 세로 중앙 정렬 */
+    width: 100%;
+}
+
+/* 우측 액션 버튼 및 상태 뱃지 영역 */
+.card-summary .actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto; /* 핵심: 왼쪽 마진을 자동으로 설정하여 오른쪽 끝으로 밀어냅니다 */
+}
+
+/* 상태 뱃지 공통 스타일 */
+.status-badge {
+    padding: 5px 12px;
+    border-radius: 15px;
+    /* 더 둥글게 */
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-align: center;
+    min-width: 65px;
+    text-transform: uppercase;
+    /* 대문자화 */
+    letter-spacing: 0.5px;
+}
+
+/* 상태별 뱃지 색상 */
+.status-badge.pending {
+    background-color: #ffe8a1;
+    color: #59480a;
+    border: 1px solid #ffd65c;
+}
+
+.status-badge.accepted {
+    background-color: #c8f5d0;
+    color: #165922;
+    border: 1px solid #99e8a9;
+}
+
+.status-badge.rejected {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.status-badge.completed {
+    background-color: #e2e3e5;
+    color: #383d41;
+    border: 1px solid #d6d8db;
+}
+
+.status-badge.for_sale {
+    background-color: #bde7ee;
+    color: #0c5460;
+    border: 1px solid #94dde9;
+}
+
+/* 상세보기 버튼 */
+.btn-details {
+    background-color: #fff;
+    color: #495057;
+    border: 1px solid #ced4da;
+    font-weight: 500;
+    padding: 6px 12px;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.btn-details:hover {
+    background-color: #f8f9fa;
+    border-color: #adb5bd;
+}
+
+/* 재판매 등록 버튼 */
+.btn-resell {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.btn-resell:hover {
+    background-color: #0069d9;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.25);
+}
+
+/* 검색 결과 없음 메시지 */
+.no-results-message {
+    text-align: center;
+    padding: 50px 20px;
+    color: #6c757d;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px dashed #dee2e6;
+}
+
+/* 확장되는 상세 정보 영역 스타일 (기존과 동일) */
+.bids-expand-container {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e9ecef;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+
+
+
+.offer-card.is-expanded .card-summary {
+    border-bottom: 1px solid #e9ecef;
+}
+
+.card-details-container {
+    padding: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+}
+
+.offer-card.is-expanded .card-details-container {
+    padding: 1.5rem;
+    max-height: 500px; /* 충분한 높이 */
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.detail-item .label {
+    display: block;
+    font-size: 0.8rem;
+    color: #868e96;
+    margin-bottom: 0.25rem;
+}
+
+.detail-item .value {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #343a40;
+}
+
+.loading-message, .error-message {
+    text-align: center;
+    color: #868e96;
+    padding: 1rem;
+}
+
+.error-message {
+    color: #fa5252;
+}
+
+/* FWD_my_offers.css 파일 맨 아래에 추가 */
+
+.detail-item-price {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.detail-item-price .price-display,
+.detail-item-price .price-edit {
+    flex-grow: 1;
+}
+
+.detail-item-price .offer-actions {
+    flex-shrink: 0;
+}
+
+.price-edit .price-input-wrapper {
+    display: flex;
+}
+
+/* FWD_my_offers.css 파일 맨 아래에 추가 */
+.offer-card.is-settled {
+    background-color: #f8f9fa; /* 회색 배경 */
+    opacity: 0.7; /* 약간 투명하게 */
+}
+.offer-card.is-settled:hover {
+    box-shadow: none;
+    border-color: #e9ecef;
+}
+.offer-card.is-settled .btn {
+    visibility: hidden; /* 버튼들 숨기기 */
+}

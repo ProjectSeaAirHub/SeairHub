@@ -1,0 +1,164 @@
+/* =================================================== */
+/* 거래내역 조회 페이지 (FWD_transaction_history.css) */
+/* =================================================== */
+
+/* 페이지 전체의 기본 배경색과 콘텐츠 영역 패딩 설정 */
+.main-content .content {
+    background-color: #f8f9fa;
+    /* 매우 연한 회색으로 배경을 채워 입체감을 줍니다. */
+}
+
+/* 컨트롤 바 (필터 버튼 영역) */
+.controls-bar {
+    padding: 0;
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    margin-bottom: 16px;
+    /* 테이블과의 간격 조정 */
+}
+
+/* 필터 버튼 그룹 스타일링 */
+.filter-group {
+    display: inline-flex;
+    background-color: #e9ecef;
+    /* 버튼들을 감싸는 배경 */
+    padding: 6px;
+    border-radius: 30px;
+    /* 둥근 알약 모양으로 감싸기 */
+}
+
+.filter-group .btn-filter {
+    border: none;
+    border-radius: 20px;
+    /* 각 버튼도 둥글게 */
+    padding: 8px 20px;
+    font-weight: 600;
+    background-color: transparent;
+    /* 평소에는 투명 */
+    color: #495057;
+    transition: all 0.2s ease-in-out;
+}
+
+/* 활성화된 필터 버튼 (주황색 적용) */
+.filter-group .btn-filter.is-active {
+    background-color: #FC512C;
+    color: white;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+    /* 입체감 */
+}
+
+.filter-group .btn-filter:not(.is-active):hover {
+    background-color: #dee2e6;
+    /* 마우스 올렸을 때 효과 */
+}
+
+/* 테이블을 감싸는 컨테이너 (카드 디자인) */
+.table-container {
+    background-color: #ffffff;
+    border-radius: var(--border-radius-lg);
+    border: 1px solid var(--border-color);
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* 거래내역 테이블 스타일 */
+.transaction-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    /* 셀 사이의 테두리를 합칩니다. */
+}
+
+/* 테이블 헤더 */
+.transaction-table thead th {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    padding: 16px;
+    text-align: left;
+    font-size: 14px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+/* 테이블 본문 */
+.transaction-table tbody td {
+    padding: 18px 16px;
+    border-bottom: 1px solid #e9ecef;
+    color: #212529;
+    vertical-align: middle;
+}
+
+/* 마지막 줄의 하단 테두리 제거 */
+.transaction-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* 마우스를 올렸을 때 행 전체에 하이라이트 효과 */
+.transaction-table tbody tr:hover {
+    background-color: #f1f3f5;
+}
+
+/* '관리' 버튼 스타일 */
+.transaction-table .btn-details {
+    background-color: white;
+    border: 1px solid #ced4da;
+    color: #495057;
+    padding: 6px 12px;
+    font-weight: 500;
+    border-radius: 6px;
+}
+
+.transaction-table .btn-details:hover {
+    background-color: #f1f3f5;
+    border-color: #adb5bd;
+}
+
+/* ===================================== */
+/* 상태 배지 (Status Badge) - 가장 중요한 부분! */
+/* ===================================== */
+.status-badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.confirmed {
+    background-color: #e6f4ea;
+    /* 연한 녹색 배경 */
+    color: #008744;
+    /* 진한 녹색 텍스트 */
+}
+
+.status-badge.scheduled {
+    background-color: #ebf1fa;
+    /* 연한 파랑 배경 */
+    color: #34568B;
+    /* 진한 파랑 텍스트 */
+}
+
+/* 향후 추가될 수 있는 다른 상태들 */
+.status-badge.completed {
+    background-color: #e8eaf6;
+    color: #3f51b5;
+}
+
+.status-badge.cancelled {
+    background-color: #fdeded;
+    color: #d32f2f;
+}
+
+/* /static/css/pages/FWD_transaction_history.css 파일 맨 아래에 추가 */
+
+/* 거래내역 합계 모달의 내용(body) 부분 스타일 수정 */
+#summary-modal .modal-body {
+    /* 화면 높이의 최대 60%까지만 커지도록 제한 */
+    max-height: 60vh;
+    
+    /* 내용이 max-height를 넘어가면 자동으로 세로 스크롤바 생성 */
+    overflow-y: auto;
+}

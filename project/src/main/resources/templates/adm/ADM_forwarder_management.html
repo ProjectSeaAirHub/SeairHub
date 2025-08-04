@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>관리자 - 포워더 관리</title>
+    <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/layout.css}">
+    <link rel="stylesheet" th:href="@{/css/components.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/ADM_management.css}">
+</head>
+<body>
+    <div class="container">
+		<div th:replace="~{fragments/ADM_sidebar :: admSidebarFragment(activeMenu='forwarder-management')}"></div>
+        <main class="main-content">
+            <div th:replace="~{fragments/header :: headerFragment}"></div>
+            <section class="content">
+                <h2 class="page-title">포워더 관리</h2>
+                <div class="table-container">
+                    <table class="management-table">
+                        <thead>
+                            <tr>
+                                <th>회사명</th>
+                                <th>담당자</th>
+                                <th>아이디</th>
+                                <th>연락처/이메일</th>
+                                <th>가입일</th>
+                                <th>활동 요약</th>
+                                <th>사업자등록증</th>
+                                <th>승인 상태</th>
+                                <th>관리</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="fwd : ${forwarderList}">
+                                <td th:text="${fwd.companyName}"></td>
+                                <td th:text="${fwd.userName}"></td>
+                                <td th:text="${fwd.userId}"></td>
+                                <td>
+                                    <span th:text="${fwd.phoneNum}"></span><br>
+                                    <span th:text="${fwd.email}"></span>
+                                </td>
+                                <td th:text="${fwd.createDate}"></td>
+                                <td>
+                                    컨테이너: <strong th:text="${fwd.containerCount}"></strong><br>
+                                    총 입찰: <strong th:text="${fwd.totalOffers}"></strong><br>
+                                    낙찰: <strong th:text="${fwd.acceptedOffers}"></strong>
+                                </td>
+                                <td>
+                                    <a th:if="${fwd.businessLicenseSavedName}" th:href="@{/download/license/{fileName}(fileName=${fwd.businessLicenseSavedName})}" class="btn btn-sm">다운로드</a>
+                                    <span th:unless="${fwd.businessLicenseSavedName}">미제출</span>
+                                </td>
+                                <td>
+                                    <span class="status-badge" th:text="${fwd.approvalStatus}" th:classappend="${fwd.approvalStatus?.toLowerCase()}"></span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons" th:attr="data-user-seq=${fwd.userSeq}">
+                                        <th:block th:if="${fwd.approvalStatus == 'PENDING'}">
+                                            <button class="btn btn-sm btn-success btn-action" data-action="APPROVED">승인</button>
+                                            <button class="btn btn-sm btn-danger btn-action" data-action="REJECTED">거절</button>
+                                        </th:block>
+                                        <th:block th:if="${fwd.approvalStatus == 'APPROVED'}">
+                                            <button class="btn btn-sm btn-warning btn-action" data-action="SUSPENDED">정지</button>
+                                        </th:block>
+                                        <th:block th:if="${fwd.approvalStatus == 'SUSPENDED' or fwd.approvalStatus == 'REJECTED'}">
+                                            <button class="btn btn-sm btn-info btn-action" data-action="APPROVED">활성화</button>
+                                        </th:block>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+<script th:src="@{/js/ADM_management.js}"></script>
+</body>
+</html>

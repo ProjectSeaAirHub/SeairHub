@@ -1,0 +1,145 @@
+/* css/pages/CUS_history.css - 최종 버전 */
+
+/* ===================================== */
+/* 컨트롤 바 (CUS_request와 동일한 구조) */
+/* ===================================== */
+.controls-bar {
+    display: flex;
+    justify-content: space-between;
+    /* 양쪽 끝으로 그룹을 분리 */
+    align-items: center;
+    padding: 16px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    /* 창이 좁아지면 줄바꿈 */
+    gap: 24px;
+    /* 그룹간 간격 */
+}
+
+/* [추가] 왼쪽 정렬 그룹 (정렬 + 필터) */
+.control-group-left {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 24px;
+    /* 정렬 그룹과 필터 그룹 사이의 간격 */
+}
+
+/* [추가] 오른쪽 정렬 그룹 (날짜 + 검색 + 조회) */
+.control-group-right {
+    display: flex;
+    align-items: center;
+    /* 모든 요소를 세로 중앙에 정렬 */
+    gap: 8px;
+    /* 요소들 사이의 간격 */
+    flex-wrap: nowrap;
+    /* 오른쪽 요소들이 줄바꿈되지 않도록 강제 */
+}
+
+/* 개별 컨트롤 그룹 (정렬, 필터 등)의 기본 스타일 */
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 오른쪽 그룹 안의 검색창과 조회 버튼 스타일 */
+.control-group-right .form-input {
+    width: 200px;
+    /* 검색창 너비 */
+}
+
+.control-group-right .btn-primary {
+    white-space: nowrap;
+    /* '조회' 버튼 글자 깨짐 방지 */
+}
+
+
+/* ===================================== */
+/* 요청 이력 목록 (기존과 동일) */
+/* ===================================== */
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* 개별 이력 카드 (기존과 동일) */
+.history-card {
+    display: flex;
+    align-items: center;
+    padding: 20px 24px;
+    gap: 16px;
+}
+
+.history-card .info {
+    flex-grow: 1;
+}
+
+.history-card .request-id {
+    font-size: 13px;
+    color: var(--text-color-light);
+    margin-bottom: 4px;
+    display: block;
+}
+
+.history-card .item-name {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+}
+
+.history-card .details {
+    font-size: 14px;
+    color: var(--text-color-secondary);
+    margin: 0;
+}
+
+.history-card .meta {
+    text-align: right;
+}
+
+.history-card .cbm {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.history-card .actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 180px;
+    justify-content: flex-end;
+}
+
+/* 상태 태그 스타일 (기존과 동일) */
+.status-tag {
+    padding: 6px 12px;
+    border-radius: var(--border-radius-pill);
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.status-tag.confirmed {
+    background-color: var(--success-color-light);
+    color: var(--success-color);
+}
+
+.status-tag.expired {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.status-tag.cancelled {
+    background-color: var(--warning-color-light);
+    color: var(--warning-color);
+}
+
+.history-card .btn-details {
+    background-color: white;
+    border: 1px solid var(--border-color);
+    color: var(--dark-color);
+}

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나의제안조회 - SEAIRHUB</title>
+    <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/layout.css}">
+    <link rel="stylesheet" th:href="@{/css/components.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/FWD_my_offers.css}">
+</head>
+
+<body>
+    <div class="container">
+        <div th:replace="~{fragments/sidebar :: sidebarFragment(activeMenu='my-offers')}"></div>
+        
+        <main class="main-content">
+            <div th:replace="~{fragments/header :: headerFragment}"></div>
+            
+            <section class="content">
+                <h2 class="page-title">나의제안조회</h2>
+				<div class="controls-bar">
+					<div class="sort-group">
+					    <a th:href="@{/fwd/my-offers(sort='createdAt,' + ${reverseSortDirection}, status=${status}, keyword=${keyword})}" class="btn btn-sort" th:classappend="${currentSortField == 'createdAt'} ? 'is-active'">
+					        최신순
+					        <span th:if="${currentSortField == 'createdAt'}" th:text="${currentSortDirection == 'ASC' ? '▲' : '▼'}"></span>
+					        <span th:unless="${currentSortField == 'createdAt'}">▼</span>
+					    </a>
+					    <a th:href="@{/fwd/my-offers(sort='container.etd,' + ${reverseSortDirection}, status=${status}, keyword=${keyword})}" class="btn btn-sort" th:classappend="${currentSortField == 'container.etd'} ? 'is-active'">
+					        출발일순
+					        <span th:if="${currentSortField == 'container.etd'}" th:text="${currentSortDirection == 'ASC' ? '▲' : '▼'}"></span>
+					        <span th:unless="${currentSortField == 'container.etd'}">▼</span>
+					    </a>
+					    <a th:href="@{/fwd/my-offers(sort='request.cargo.totalCbm,' + ${reverseSortDirection}, status=${status}, keyword=${keyword})}" class="btn btn-sort" th:classappend="${currentSortField == 'request.cargo.totalCbm'} ? 'is-active'">
+					        CBM순
+					        <span th:if="${currentSortField == 'request.cargo.totalCbm'}" th:text="${currentSortDirection == 'ASC' ? '▲' : '▼'}"></span>
+					        <span th:unless="${currentSortField == 'request.cargo.totalCbm'}">▼</span>
+					    </a>
+					</div>
+				    
+
+
+				    <div class="filter-group">
+				        <a th:href="@{/fwd/my-offers(status=${status == 'ACCEPTED' ? null : 'ACCEPTED'}, keyword=${keyword}, sort=${param.sort})}"
+				           class="btn" th:classappend="${status == 'ACCEPTED'} ? 'is-active'">수락</a>
+				        <a th:href="@{/fwd/my-offers(status=${status == 'REJECTED' ? null : 'REJECTED'}, keyword=${keyword}, sort=${param.sort})}"
+				           class="btn" th:classappend="${status == 'REJECTED'} ? 'is-active'">거절</a>
+				        <a th:href="@{/fwd/my-offers(status=${status == 'PENDING' ? null : 'PENDING'}, keyword=${keyword}, sort=${param.sort})}"
+				           class="btn" th:classappend="${status == 'PENDING'} ? 'is-active'">진행중</a>
+				        <a th:href="@{/fwd/my-offers(status=${status == 'FOR_SALE' ? null : 'FOR_SALE'}, keyword=${keyword}, sort=${param.sort})}"
+				           class="btn" th:classappend="${status == 'FOR_SALE'} ? 'is-active'">재판매중</a>
+				    </div>
+				    <form th:action="@{/fwd/my-offers}" method="get" class="search-group">
+				        <input type="hidden" name="status" th:value="${status}">
+				        <input type="hidden" name="sort" th:value="${param.sort}">
+				        <input type="text" name="keyword" class="form-input" placeholder="품명 또는 요청ID로 검색" th:value="${keyword}">
+				        <button type="submit" class="btn btn-primary">조회</button>
+				    </form>
+				</div>
+
+				<div class="offer-list">
+				    <div th:if="${myOffersPage.empty}" class="no-results-message">
+				        조회된 제안 내역이 없습니다.
+				    </div>
+					<article class="card offer-card" th:each="offer : ${myOffersPage.content}"
+					         th:classappend="${offer.isFullySettled} ? 'is-settled' : ''">
+					    <div class="card-summary">
+					        <div class="info">
+					            <div>
+					                <span class="request-id-label" th:text="${offer.requestIdLabel}"></span>
+					                <span style="font-size: 1.1em; font-weight: 700; margin-left: 10px;" th:text="${offer.itemName}"></span>
+					            </div>
+								<div class="details">
+								    <span class="incoterms" th:text="${offer.incoterms}"></span>
+								    <span class="port departure" th:text="${offer.departurePort}"></span>
+								    <span class="arrow">→</span>
+								    <span class="port arrival" th:text="${offer.arrivalPort}"></span>
+								    
+
+								    <span th:if="${offer.desiredArrivalDate != null}" 
+								          th:text="'희망도착: ' + ${#temporals.format(offer.desiredArrivalDate, 'yyyy-MM-dd')}"
+								          style="font-weight: 500; color: #007bff; margin-left: 8px;"></span>
+								    <span class="cbm" th:text="${#numbers.formatDecimal(offer.cbm, 1, 2)} + ' CBM'"></span>
+								</div>
+					            </div>
+				            <div class="actions">
+				                <span class="status-badge" th:text="${offer.statusText}" th:classappend="${offer.status.toLowerCase()}"></span>
+				                <th:block th:if="${offer.status.equalsIgnoreCase('ACCEPTED')}">
+				                    <button th:if="${#temporals.createNow().isBefore(offer.deadline)}"
+				                            class="btn btn-sm btn-resale"
+				                            th:attr="data-offer-id=${offer.offerId}">재판매하기</button>
+				                    <button th:unless="${#temporals.createNow().isBefore(offer.deadline)}"
+				                            class="btn btn-sm"
+				                            disabled="disabled">재판매 불가</button>
+				                </th:block>
+				                <button th:if="${offer.status.equalsIgnoreCase('PENDING')}"
+				                        class="btn btn-sm btn-danger-outline btn-cancel-offer"
+				                        th:attr="data-offer-id=${offer.offerId}">
+				                    제안취소
+				                </button>
+				                <button class="btn btn-sm btn-details" th:attr="data-offer-id=${offer.offerId}">상세보기</button>
+				            </div>
+				        </div>
+				        <div class="card-details-container"></div>
+				    </article>
+				</div>
+
+				<div class="pagination-container" th:if="${!myOffersPage.empty}">
+				    <nav th:with="page=${myOffersPage},
+				                   startPage = ${(page.number/10) * 10},
+				                   endPage = ${T(java.lang.Math).min(startPage + 9, page.totalPages - 1)}">
+				        <ul class="pagination">
+				            <li th:classappend="${page.first} ? 'disabled'">
+				                <a th:href="@{/fwd/my-offers(page=0, sort=${param.sort}, status=${status}, keyword=${keyword})}">«</a>
+				            </li>
+				            <li th:classappend="${startPage == 0} ? 'disabled'">
+				                <a th:href="@{/fwd/my-offers(page=${startPage - 1}, sort=${param.sort}, status=${status}, keyword=${keyword})}">‹</a>
+				            </li>
+				
+				            <li th:each="i : ${#numbers.sequence(startPage, endPage)}"
+				                th:classappend="${i == page.number} ? 'active'">
+				                <a th:href="@{/fwd/my-offers(page=${i}, sort=${param.sort}, status=${status}, keyword=${keyword})}" th:text="${i + 1}"></a>
+				            </li>
+				
+				            <li th:classappend="${endPage >= page.totalPages - 1} ? 'disabled'">
+				                <a th:href="@{/fwd/my-offers(page=${endPage + 1}, sort=${param.sort}, status=${status}, keyword=${keyword})}">›</a>
+				            </li>
+				            <li th:classappend="${page.last} ? 'disabled'">
+				                <a th:href="@{/fwd/my-offers(page=${page.totalPages - 1}, sort=${param.sort}, status=${status}, keyword=${keyword})}">»</a>
+				            </li>
+				        </ul>
+				    </nav>
+				</div>
+            </section>
+        </main>
+    </div>
+
+
+    <div class="modal-wrapper" id="resale-confirm-modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>제안 재판매 확인</h3>
+                <button class="btn-close">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="modal-resale-text" style="text-align: center; line-height: 1.6;"></p>
+                <input type="hidden" id="modal-offer-id-to-resale">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-cancel">취소</button>
+                <button class="btn btn-danger" id="btn-confirm-resale">확인</button>
+            </div>
+        </div>
+    </div>
+
+	<template id="offer-details-template">
+	    <div class="details-grid">
+
+	        <div class="detail-item" data-field-container="requesterCompanyName">
+	            <span class="label">화주</span>
+	            <span class="value" data-field="requesterCompanyName"></span>
+	        </div>
+		    <div class="detail-item">
+	            <span class="label">품명</span>
+	            <span class="value" data-field="itemName"></span>
+	        </div>
+	        <div class="detail-item">
+	            <span class="label">요청 마감일</span>
+	            <span class="value" data-field="deadline"></span>
+	        </div>
+
+	        <div class="detail-item">
+	            <span class="label">CBM</span>
+	            <span class="value" data-field="cbm"></span>
+	        </div>
+	        <div class="detail-item">
+	            <span class="label">사용 컨테이너</span>
+	            <span class="value" data-field="containerId"></span>
+	        </div>
+	        
+	        	        <div class="detail-item detail-item-price">
+	            <div class="price-display">
+	                <span class="label">내 제안 운임</span>
+	                <span class="value" data-field="myOfferPrice"></span>
+	            </div>
+	            <div class="price-edit" style="display: none;">
+	                <span class="label">운임 수정</span>
+	                <div class="price-input-wrapper">
+	                    <input type="number" class="form-input bid-price">
+	                    <select class="form-input currency-select">
+	                        <option value="USD">USD</option>
+	                        <option value="KRW">KRW</option>
+	                    </select>
+	                </div>
+	            </div>
+	            <div class="offer-actions">
+	                <button class="btn btn-sm btn-edit-price">수정</button>
+	                <button class="btn btn-sm btn-primary btn-update-offer" style="display: none;">저장</button>
+	            </div>
+	        </div>
+	        
+	        <div class="detail-item final-bid-info" style="display: none; grid-column: 1 / -1; background-color: #f8f9fa; padding: 1rem; border-radius: 8px;">
+	            <span class="label" style="font-weight: bold;">최종 낙찰 정보</span>
+	            <span class="value" data-field="finalBidResult"></span>
+	        </div>
+        </div>
+	    </div>
+	</template>
+    
+    <script th:src="@{/js/fwd_my_offers.js}"></script>
+</body>
+</html>

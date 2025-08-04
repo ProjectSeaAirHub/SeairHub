@@ -1,0 +1,35 @@
+/* /static/css/pages/ADM_management.css */
+.table-container {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+}
+.management-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+.management-table th, .management-table td {
+    padding: 12px 10px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+.management-table thead th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 700;
+}
+.status-badge.pending { background-color: #fff3cd; color: #856404; }
+.status-badge.approved { background-color: #d4edda; color: #155724; }
+.status-badge.rejected { background-color: #f8d7da; color: #721c24; }
+.status-badge.suspended { background-color: #e2e3e5; color: #383d41; }
+
+.action-buttons button { margin-right: 5px; }
+/* [추가] '정지' 상태의 뱃지 스타일 */
+.status-badge.suspended { background-color: #e2e3e5; color: #383d41; }
