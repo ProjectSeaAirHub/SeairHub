@@ -122,3 +122,204 @@
 body.modal-open {
     overflow: hidden;
 }
+
+
+
+
+/* /static/css/layout.css 파일 맨 아래에 추가 */
+
+.notification-area {
+    position: relative;
+}
+
+.notification-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+}
+
+.notification-count {
+    background-color: var(--danger-color);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    display: none; /* 기본 숨김 */
+}
+
+.notification-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 10px;
+    width: 320px;
+    background-color: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 1001;
+}
+
+.notification-header {
+    padding: 12px 16px;
+    font-weight: bold;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.notification-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.notification-list li {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f3f5;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.notification-list li:last-child {
+    border-bottom: none;
+}
+
+.notification-list li:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-list li.unread {
+    background-color: #f1f8ff; /* 안 읽은 알림 배경색 */
+}
+
+.notification-list li .message {
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.notification-list li .timestamp {
+    font-size: 12px;
+    color: #868e96;
+}
+
+.no-notifications {
+    text-align: center;
+    color: #868e96;
+    padding: 20px;
+    cursor: default !important;
+}
+
+
+/* /static/css/layout.css 파일 맨 아래에 추가 */
+
+.notification-area {
+    position: relative;
+}
+
+.notification-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    padding: 4px 8px;
+}
+
+.notification-count {
+    background-color: #FC512C; /* 포인트 색상 */
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: none; /* JS로 제어 */
+    align-items: center;
+    justify-content: center;
+}
+
+.notification-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 10px;
+    width: 350px;
+    background-color: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    z-index: 1010;
+}
+
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    font-weight: bold;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.mark-all-read-btn {
+    background: none;
+    border: none;
+    color: #007bff;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.notification-list {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 0;
+    margin: 0;
+}
+
+.notification-list li {
+    list-style: none;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f3f5;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.notification-list li:last-child {
+    border-bottom: none;
+}
+
+.notification-list li:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-list li.unread {
+    background-color: #f0f8ff;
+}
+
+.notification-list li .message {
+    font-size: 14px;
+    margin-bottom: 4px;
+    color: #333;
+}
+
+.notification-list li .timestamp {
+    font-size: 12px;
+    color: #868e96;
+}
+
+.no-notifications {
+    text-align: center;
+    color: #868e96;
+    padding: 40px 20px;
+    cursor: default !important;
+}

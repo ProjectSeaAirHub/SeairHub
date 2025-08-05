@@ -28,6 +28,7 @@ import net.dima.project.repository.ContainerCargoRepository;
 import net.dima.project.repository.OfferRepository;
 import net.dima.project.repository.RequestRepository;
 import net.dima.project.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +40,7 @@ public class RequestService {
     private final UserRepository userRepository;
     private final CargoRepository cargoRepository;
     private final ContainerCargoRepository containerCargoRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public Page<RequestCardDto> getRequests(
             boolean excludeClosed,
@@ -235,6 +237,10 @@ public class RequestService {
             offer.setStatus(offer.equals(winningOffer) ? OfferStatus.ACCEPTED : OfferStatus.REJECTED);
         });
         request.setStatus(RequestStatus.CLOSED);
+        
+        // [✅ 아래 코드 추가]
+        // 모든 제안의 상태가 변경된 후, 이벤트를 발행합니다.
+        eventPublisher.publishEvent(new NotificationEvents.OfferConfirmedEvent(this, allOffers, winningOffer));
 
         if (!containerCargoRepository.existsByOffer_OfferId(winningOfferId)) {
             ContainerCargoEntity cargoInContainer = ContainerCargoEntity.builder()

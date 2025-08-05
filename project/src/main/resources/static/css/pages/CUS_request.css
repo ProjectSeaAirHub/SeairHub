@@ -366,13 +366,16 @@
     position: fixed;
     bottom: 40px;
     right: 40px;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background-color: var(--danger-color); /* 화주는 다른 색으로 강조 */
+    /* width와 height를 auto로 변경하고 padding으로 크기 조절 */
+    width: auto;
+    height: auto;
+    padding: 12px 24px;
+    border-radius: 50px; /* 알약 모양으로 변경 */
+    background-color: var(--danger-color);
     color: white;
-    font-size: 32px;
-    line-height: 56px;
+    font-size: 16px; /* 폰트 크기 조정 */
+    font-weight: 700;
+    line-height: 1.5; /* 줄 높이 표준화 */
     text-align: center;
     border: none;
     box-shadow: 0 4px 10px rgba(0,0,0,0.2);

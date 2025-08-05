@@ -17,7 +17,7 @@ public class DataApiController {
 
     @GetMapping("/api/scfi-data")
     public ResponseEntity<List<ScfiData>> getScfiData() {
-        List<ScfiData> data = scfiDataRepository.findTop52ByOrderByRecordDateAsc();
+        List<ScfiData> data = scfiDataRepository.findByOrderByRecordDateAsc();
         return ResponseEntity.ok(data);
     }
 }

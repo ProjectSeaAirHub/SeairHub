@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import net.dima.project.entity.OfferStatus;
+import org.springframework.context.ApplicationEventPublisher;
+import net.dima.project.entity.NotificationEvents;
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +42,7 @@ public class OfferService {
     private final RequestRepository requestRepository;
     private final UserRepository userRepository;
     private final ContainerRepository containerRepository;
+    private final ApplicationEventPublisher eventPublisher; 
 
     /**
      * 새로운 제안(Offer)을 생성합니다.
@@ -67,7 +70,14 @@ public class OfferService {
                 .status(OfferStatus.PENDING)
                 .build();
         offerRepository.save(newOffer);
+        
+        // [✅ 아래 코드 추가]
+        // 제안이 성공적으로 생성되면 이벤트를 발행합니다.
+        eventPublisher.publishEvent(new NotificationEvents.OfferCreatedEvent(this, newOffer));
+    
     }
+    
+    
 
     /**
      * 현재 로그인한 사용자의 모든 제안 목록을 조회합니다.

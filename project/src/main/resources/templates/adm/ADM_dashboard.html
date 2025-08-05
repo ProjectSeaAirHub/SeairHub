@@ -21,6 +21,8 @@
 
             <section class="content">
                 <h2 class="page-title">메인 대시보드</h2>
+                
+                
 
                 <div class="dashboard-grid">
                     <div class="dashboard-card">
@@ -45,15 +47,43 @@
                             <span class="metric-value" id="total-cus-users">0</span>
                         </div>
                     </div>
+                    
+                    
+
+	                 <div class="dashboard-card alert-card">
+	                        <h3>주요 알림 및 현황</h3>
+	                        <div class="metric-item">
+	                            <span class="metric-label">승인 대기중인 사용자</span>
+	                            <span class="metric-value" id="pending-users">0</span>
+	                        </div>
+	                        <div class="metric-item">
+	                            <span class="metric-label">마감 임박 (입찰 없음)</span>
+	                            <span class="metric-value" id="no-bid-requests">0</span>
+	                        </div>
+	                        <div class="metric-item">
+	                            <span class="metric-label">화주 미확정 마감 비율</span>
+	                            <span class="metric-value" id="missed-confirmation-rate">0%</span>
+	                        </div>
+                    </div>
+                </div>
+                
+                 <div class="dashboard-grid two-columns">
+                    <div class="dashboard-card">
+                        <h3>SCFI 데이터 관리</h3>
+                        <form id="scfi-form" class="scfi-form">
+                            <input type="date" id="scfi-date" required>
+                            <input type="number" id="scfi-value" step="0.01" placeholder="지수 값 입력" required>
+                            <button type="submit">저장</button>
+                        </form>
+                    </div>
                     <div class="dashboard-card alert-card">
-                        <h3>주요 알림 및 현황</h3>
-                        <div class="metric-item">
-                            <span class="metric-label">승인 대기중인 사용자</span>
-                            <span class="metric-value" id="pending-users">0</span>
-                        </div>
-                        <div class="metric-item">
-                            <span class="metric-label">마감 임박 (입찰 없음)</span>
-                            <span class="metric-value" id="no-bid-requests">0</span>
+                        <h3>SCFI 변동 현황</h3>
+                        <div class="scfi-status-display">
+                            <div id="scfi-traffic-light" class="traffic-light"></div>
+                            <div class="status-text">
+                                <span id="scfi-percentage">변동 없음</span>
+                                <span id="scfi-message">데이터 2개 이상 필요</span>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -13,6 +13,7 @@ import net.dima.project.repository.*;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Sort;
 
 
@@ -40,7 +41,7 @@ public class ContainerService {
     private final OfferRepository offerRepository;
     private final UserRepository userRepository;
     private final RequestRepository requestRepository;
-
+    private final ApplicationEventPublisher eventPublisher;
 
 
     
@@ -372,6 +373,9 @@ public class ContainerService {
                 offer.setStatus(OfferStatus.CONFIRMED);
             }
         }
+        
+        // [✅ 아래 코드 추가]
+        eventPublisher.publishEvent(new NotificationEvents.ContainerStatusChangedEvent(this, container, "컨테이너가 확정되었습니다."));
     }
     
     
@@ -391,6 +395,9 @@ public class ContainerService {
                 offer.setStatus(OfferStatus.SHIPPED);
             }
         }
+        
+        // [✅ 아래 코드 추가]
+        eventPublisher.publishEvent(new NotificationEvents.ContainerStatusChangedEvent(this, container, "선적이 완료되었습니다."));
     }
 
     // [✅ 추가] 운송완료 처리 메서드
@@ -409,6 +416,8 @@ public class ContainerService {
                 offer.setStatus(OfferStatus.COMPLETED);
             }
         }
+        // [✅ 아래 코드 추가]
+        eventPublisher.publishEvent(new NotificationEvents.ContainerStatusChangedEvent(this, container, "운송이 완료되었습니다."));
     }
 
     // [✅ 추가] 중복 코드를 줄이기 위한 헬퍼 메서드
@@ -429,5 +438,9 @@ public class ContainerService {
             throw new IllegalStateException("'운송완료' 상태의 컨테이너만 정산할 수 있습니다.");
         }
         container.setStatus(ContainerStatus.SETTLED);
+        // [✅ 아래 코드 추가]
+        eventPublisher.publishEvent(new NotificationEvents.ContainerStatusChangedEvent(this, container, "정산이 완료되었습니다."));
+
     }
+    
 }

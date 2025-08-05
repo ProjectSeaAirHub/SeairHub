@@ -19,6 +19,7 @@ import net.dima.project.dto.BidderDto;         // import 추가
 import net.dima.project.dto.MyPostedRequestDto; // import 추가
 import net.dima.project.entity.ContainerCargoEntity;
 import net.dima.project.entity.ContainerStatus;
+import net.dima.project.entity.NotificationEvents;
 import net.dima.project.entity.OfferEntity;
 import net.dima.project.entity.OfferStatus;
 import net.dima.project.entity.RequestEntity;
@@ -32,6 +33,7 @@ import net.dima.project.repository.UserRepository;
 import java.util.ArrayList; // [✅ import 추가]
 import jakarta.persistence.criteria.Predicate; // [✅ import 추가]
 import jakarta.persistence.criteria.Root; // [✅ import 추가]
+import org.springframework.context.ApplicationEventPublisher; 
 
 @Service
 @RequiredArgsConstructor
@@ -42,7 +44,7 @@ public class ResaleService {
     private final RequestRepository requestRepository;
     private final UserRepository userRepository;
     private final ContainerCargoRepository containerCargoRepository;
-    
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void createResaleRequest(Long offerId, String currentUserId) {
@@ -195,6 +197,9 @@ public class ResaleService {
 
         OfferEntity originalOffer = resaleRequest.getSourceOffer();
         originalOffer.setStatus(OfferStatus.RESOLD);
+        
+        // [✅ 아래 코드 추가]
+        eventPublisher.publishEvent(new NotificationEvents.OfferConfirmedEvent(this, allBids, winningOffer));
 
         // [✅ 5. 핵심 수정] 나의 컨테이너에서 화물(CBM) 제거 로직 보강
         // findByOfferOfferId로 데이터를 찾되, 만약 없더라도 오류를 발생시키지 않고 넘어갑니다.=

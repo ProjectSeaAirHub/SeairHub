@@ -9,10 +9,13 @@ import net.dima.project.entity.*;
 import net.dima.project.repository.ContainerRepository;
 import net.dima.project.repository.OfferRepository;
 import net.dima.project.repository.RequestRepository;
+import net.dima.project.repository.ScfiDataRepository;
 import net.dima.project.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -28,6 +31,19 @@ public class AdminService {
     private final ContainerRepository containerRepository;
     private final UserRepository userRepository;
     private final RequestRepository requestRepository;
+    private final ScfiDataRepository scfiDataRepository; 
+    
+    // [추가] SCFI 데이터 저장 메서드
+    public void saveScfiData(LocalDate recordDate, BigDecimal indexValue) {
+        // 이미 해당 날짜의 데이터가 있는지 확인 (중복 방지)
+        if (scfiDataRepository.findByRecordDate(recordDate).isPresent()) {
+            throw new IllegalStateException("이미 해당 날짜의 데이터가 존재합니다.");
+        }
+        ScfiData scfiData = new ScfiData();
+        scfiData.setRecordDate(recordDate);
+        scfiData.setIndexValue(indexValue);
+        scfiDataRepository.save(scfiData);
+    }
     
     // [추가] 포워더 목록 조회
     @Transactional(readOnly = true)
@@ -84,6 +100,7 @@ public class AdminService {
     // [추가] 대시보드 지표 계산 메서드
     @Transactional(readOnly = true)
     public DashboardMetricsDto getDashboardMetrics() {
+    	LocalDateTime now = LocalDateTime.now();
         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
         LocalDateTime endOfDay = LocalDate.now().atTime(LocalTime.MAX);
         LocalDateTime deadlineThreshold = LocalDateTime.now().plusDays(1); // 마감 1일 전
@@ -95,6 +112,38 @@ public class AdminService {
         long totalCusUsers = userRepository.countByRoles("ROLE_cus");
         long pendingUsers = userRepository.countByRoles("ROLE_PENDING"); // '승인 대기' 역할 기준
         long noBidRequests = requestRepository.countOpenRequestsWithNoBids(deadlineThreshold);
+        
+        
+        // [✅ 아래 계산 로직을 추가해주세요]
+        long missedConfirmations = requestRepository.countOpenRequestsWithBidsPastDeadline(now);
+        long totalClosedOrExpired = requestRepository.countTotalClosedOrExpiredRequests(now);
+
+        Double missedConfirmationRate = (totalClosedOrExpired == 0) ? 0.0 :
+                ((double) missedConfirmations / totalClosedOrExpired) * 100;
+
+
+        // [추가] SCFI 등락률 계산 로직
+        List<ScfiData> latestTwoScfi = scfiDataRepository.findTop2ByOrderByRecordDateDesc();
+        Double scfiChangePercentage = null;
+        String scfiStatus = "NORMAL";
+
+        if (latestTwoScfi.size() == 2) {
+            BigDecimal latest = latestTwoScfi.get(0).getIndexValue();
+            BigDecimal previous = latestTwoScfi.get(1).getIndexValue();
+
+            if (previous.compareTo(BigDecimal.ZERO) != 0) {
+                BigDecimal change = latest.subtract(previous);
+                BigDecimal percentage = change.divide(previous, 4, RoundingMode.HALF_UP)
+                                              .multiply(new BigDecimal("100"));
+                scfiChangePercentage = percentage.doubleValue();
+
+                if (scfiChangePercentage >= 5.0) {
+                    scfiStatus = "GREEN";
+                } else if (scfiChangePercentage <= -5.0) {
+                    scfiStatus = "RED";
+                }
+            }
+        }
 
         return DashboardMetricsDto.builder()
                 .todayRequests(todayRequests)
@@ -103,6 +152,9 @@ public class AdminService {
                 .totalCusUsers(totalCusUsers)
                 .pendingUsers(pendingUsers)
                 .noBidRequests(noBidRequests)
+                .scfiChangePercentage(scfiChangePercentage) // [추가]
+                .scfiStatus(scfiStatus)                   // [추가]
+                .missedConfirmationRate(missedConfirmationRate)
                 .build();
     }
 

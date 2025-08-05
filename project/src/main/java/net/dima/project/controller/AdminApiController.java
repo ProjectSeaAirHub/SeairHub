@@ -1,7 +1,9 @@
 package net.dima.project.controller;
 
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import net.dima.project.dto.DashboardMetricsDto;
+import net.dima.project.dto.ScfiDataDto;
 import net.dima.project.dto.VolumeDto;
 import net.dima.project.service.AdminService;
 import org.springframework.http.ResponseEntity;
@@ -44,4 +46,16 @@ public class AdminApiController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    
+    // [추가] SCFI 데이터 저장을 위한 API
+    @PostMapping("/scfi-data")
+    public ResponseEntity<String> addScfiData(@RequestBody ScfiDataDto scfiDataDto) {
+        try {
+            adminService.saveScfiData(scfiDataDto.getRecordDate(), scfiDataDto.getIndexValue());
+            return ResponseEntity.ok("SCFI 데이터가 성공적으로 저장되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    
 }

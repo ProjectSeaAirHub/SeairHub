@@ -67,3 +67,28 @@
     position: relative;
     height: 500px;
 }
+
+/* ... 기존 코드 ... */
+.dashboard-grid.two-columns { grid-template-columns: 1fr 1fr; }
+
+.scfi-form { display: flex; gap: 10px; }
+.scfi-form input {
+    flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;
+}
+.scfi-form button {
+    padding: 8px 16px; border: none; background-color: var(--dark-color);
+    color: white; border-radius: 4px; cursor: pointer;
+}
+
+.scfi-status-display { display: flex; align-items: center; gap: 20px; }
+.traffic-light {
+    width: 40px; height: 40px; border-radius: 50%;
+    background-color: #e9ecef; /* 기본 회색 */
+    border: 2px solid #ced4da;
+}
+.traffic-light.green { background-color: #28a745; border-color: #1c7430; }
+.traffic-light.red { background-color: #dc3545; border-color: #b02a37; }
+
+.status-text { display: flex; flex-direction: column; }
+#scfi-percentage { font-size: 20px; font-weight: 700; }
+#scfi-message { font-size: 14px; color: #6c757d; }

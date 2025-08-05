@@ -85,5 +85,20 @@ public interface RequestRepository extends JpaRepository<RequestEntity, Long>, J
     // [추가] 특정 사용자가 요청한 모든 화물의 CBM 총합을 구하는 메서드
     @Query("SELECT COALESCE(SUM(c.totalCbm), 0) FROM RequestEntity r JOIN r.cargo c WHERE r.requester = :requester")
     double sumTotalCbmByRequester(@Param("requester") UserEntity requester);
+    
+    
+    /**
+     * 입찰이 1건 이상 있었지만, 화주가 확정하지 않고 마감된 요청 수를 계산합니다.
+     * (상태: OPEN, 마감일: 지남, 입찰 수: 1 이상)
+     */
+    @Query("SELECT COUNT(r) FROM RequestEntity r WHERE r.status = 'OPEN' AND r.deadline < :now AND EXISTS (SELECT o FROM OfferEntity o WHERE o.request = r)")
+    long countOpenRequestsWithBidsPastDeadline(@Param("now") LocalDateTime now);
+
+    /**
+     * 전체 마감된 요청 수를 계산합니다. (비율 계산의 분모로 사용)
+     * (상태: CLOSED 또는 (상태: OPEN 이고 마감일 지남))
+     */
+    @Query("SELECT COUNT(r) FROM RequestEntity r WHERE r.status = 'CLOSED' OR (r.status = 'OPEN' AND r.deadline < :now)")
+    long countTotalClosedOrExpiredRequests(@Param("now") LocalDateTime now);
 
 }
