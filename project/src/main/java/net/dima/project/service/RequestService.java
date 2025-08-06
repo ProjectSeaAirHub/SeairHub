@@ -41,6 +41,7 @@ public class RequestService {
     private final CargoRepository cargoRepository;
     private final ContainerCargoRepository containerCargoRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final ChatService chatService;
 
     public Page<RequestCardDto> getRequests(
             boolean excludeClosed,
@@ -241,6 +242,7 @@ public class RequestService {
         // [✅ 아래 코드 추가]
         // 모든 제안의 상태가 변경된 후, 이벤트를 발행합니다.
         eventPublisher.publishEvent(new NotificationEvents.OfferConfirmedEvent(this, allOffers, winningOffer));
+        chatService.createChatRoomForOffer(winningOffer);
 
         if (!containerCargoRepository.existsByOffer_OfferId(winningOfferId)) {
             ContainerCargoEntity cargoInContainer = ContainerCargoEntity.builder()
@@ -253,5 +255,6 @@ public class RequestService {
                     .build();
             containerCargoRepository.save(cargoInContainer);
         }
+        
     }
 }

@@ -37,6 +37,9 @@
                             th:classappend="${activeMenu == 'transaction_history'} ? 'is-active' : ''">나의거래내역</a></li>
                 </ul>
             </li>
+			<li class="menu-item" th:classappend="${activeMenu == 'chat'} ? 'is-active' : ''">
+			    <a th:href="@{/chat}">채팅</a>
+			</li>
             <li class="menu-item">
                 <a href="#">결제</a>
             </li>

@@ -35,7 +35,7 @@ public class SecurityConfig {
                 "/approval-pending" // [추가] 승인 대기 페이지는 모두 접근 가능하도록
                 ,"/api/scfi-data" 
             ).permitAll()
-            .requestMatchers("/api/notifications/**").authenticated()
+            .requestMatchers("/api/notifications/**").hasAnyRole("fwd", "cus", "admin")
             .requestMatchers("/download/**").authenticated()
             .requestMatchers("/adm/**").hasRole("admin")
             .requestMatchers("/fwd/**", "/api/fwd/**").hasAnyRole("fwd", "admin") // [수정]

@@ -43,12 +43,14 @@ public class KakaoService extends DefaultOAuth2UserService {
             // [오류 수정]
             // 여기서 `attributes`를 포함하여 객체를 생성해야 합니다.
             // 공통 메서드를 사용하는 대신, 원래 코드처럼 builder를 직접 사용합니다.
+         // [수정 후 코드]
             return LoginUserDetails.builder()
+                .userSeq(existingUser.getUserSeq()) // userSeq 추가
                 .userId(existingUser.getUserId())
                 .userPwd(existingUser.getUserPwd())
                 .userName(existingUser.getUserName())
                 .roles(existingUser.getRoles())
-                .attributes(oauth2User.getAttributes()) // <-- 이 부분이 반드시 필요합니다!
+                .attributes(oauth2User.getAttributes())
                 .build();
         }
         

@@ -15,7 +15,7 @@ import net.dima.project.entity.UserEntity;
 @Builder
 @Data
 public class LoginUserDetails implements UserDetails, OAuth2User {
-
+	private Integer userSeq; // [이 줄을 추가해주세요]
     private String userId;
     private String userPwd;
     private String userName;
@@ -40,6 +40,11 @@ public class LoginUserDetails implements UserDetails, OAuth2User {
     public String getUserName() {
         return userName;
     }
+    // [아래 getUserSeq 메서드를 추가해주세요]
+    public Integer getUserSeq() {
+        return userSeq;
+    }
+
 
     @Override
     public Map<String, Object> getAttributes() {
@@ -52,15 +57,17 @@ public class LoginUserDetails implements UserDetails, OAuth2User {
     }
 
     /**
-     * [수정] 혼란을 피하기 위해 원래 코드의 메서드 이름인 toResp로 복원합니다.
      * UserEntity(DB 데이터)를 LoginUserDetails(Spring Security용 데이터)로 변환
+     * [이 메서드를 아래 코드로 교체해주세요]
      */
     public static LoginUserDetails toResp(UserEntity userEntity) {
         return LoginUserDetails.builder()
+            .userSeq(userEntity.getUserSeq()) // userSeq 추가
             .userId(userEntity.getUserId())
             .userPwd(userEntity.getUserPwd())
             .userName(userEntity.getUserName())
             .roles(userEntity.getRoles())
             .build();
     }
+
 }

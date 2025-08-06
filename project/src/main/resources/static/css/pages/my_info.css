@@ -1,0 +1,71 @@
+/* /static/css/pages/my_info.css */
+
+.my-info-container {
+    max-width: 800px; /* 콘텐츠 최대 너비 설정 */
+    margin: 0 auto;   /* 가운데 정렬 */
+    display: flex;
+    flex-direction: column;
+    gap: 40px; /* 각 섹션 사이의 간격 */
+}
+
+.info-section {
+    background-color: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 24px 32px;
+}
+
+.section-title {
+    font-size: 20px;
+    font-weight: 700;
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2열 그리드 */
+    gap: 20px 32px; /* 세로, 가로 간격 */
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.info-item.full-width {
+    grid-column: 1 / -1; /* 한 줄 전체 사용 */
+}
+
+.info-item label {
+    font-size: 14px;
+    color: var(--text-color-light);
+    font-weight: 500;
+}
+
+.info-item span {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.section-actions {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #f1f3f5;
+    display: flex;
+    justify-content: flex-end; /* 버튼을 오른쪽으로 정렬 */
+    gap: 12px;
+}
+
+/* danger-outline 버튼 스타일 (components.css에 추가해도 좋음) */
+.btn-danger-outline {
+    background-color: transparent;
+    border: 1px solid var(--danger-color);
+    color: var(--danger-color);
+}
+.btn-danger-outline:hover {
+    background-color: var(--danger-color);
+    color: white;
+}

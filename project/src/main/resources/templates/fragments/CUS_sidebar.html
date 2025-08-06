@@ -27,6 +27,9 @@
       <li class="menu-item" th:classappend="${activeMenu == 'cusHistory'} ? 'is-active' : ''">
         <a th:href="@{/cus/cusHistory}">요청이력조회</a>
       </li>
+		<li class="menu-item" th:classappend="${activeMenu == 'chat'} ? 'is-active' : ''">
+		    <a th:href="@{/chat}">채팅</a>
+		</li>
     </ul>
   </nav>
 </aside>

@@ -45,6 +45,7 @@ public class ResaleService {
     private final UserRepository userRepository;
     private final ContainerCargoRepository containerCargoRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final ChatService chatService;
 
     @Transactional
     public void createResaleRequest(Long offerId, String currentUserId) {
@@ -200,6 +201,8 @@ public class ResaleService {
         
         // [✅ 아래 코드 추가]
         eventPublisher.publishEvent(new NotificationEvents.OfferConfirmedEvent(this, allBids, winningOffer));
+        
+        chatService.createChatRoomForOffer(winningOffer);
 
         // [✅ 5. 핵심 수정] 나의 컨테이너에서 화물(CBM) 제거 로직 보강
         // findByOfferOfferId로 데이터를 찾되, 만약 없더라도 오류를 발생시키지 않고 넘어갑니다.=

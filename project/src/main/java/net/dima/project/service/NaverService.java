@@ -42,13 +42,18 @@ public class NaverService extends DefaultOAuth2UserService {
      // 이미 가입된 사용자인 경우
      if (existingUser != null) {
          log.info("기존 네이버 사용자입니다. 로그인 처리를 진행합니다: {}", existingUser.getUserId());
-         return LoginUserDetails.builder()
-             .userId(existingUser.getUserId())
-             .userPwd(existingUser.getUserPwd())
-             .userName(existingUser.getUserName())
-             .roles(existingUser.getRoles())
-             .attributes(response) // 네이버는 response 맵 자체를 속성으로 사용합니다.
-             .build();
+      // [기존 코드]
+      // return LoginUserDetails.builder() ...
+
+      // [수정 후 코드]
+      return LoginUserDetails.builder()
+          .userSeq(existingUser.getUserSeq()) // userSeq 추가
+          .userId(existingUser.getUserId())
+          .userPwd(existingUser.getUserPwd())
+          .userName(existingUser.getUserName())
+          .roles(existingUser.getRoles())
+          .attributes(response)
+          .build();
      }
      
      // 신규 사용자인 경우

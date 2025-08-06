@@ -11,6 +11,8 @@ import net.dima.project.repository.UserRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
@@ -55,6 +57,9 @@ public class NotificationService {
         return emitter;
     }
 
+    /**
+     * [수정] 알림을 DB에 저장하는 트랜잭션과 SSE로 전송하는 네트워크 작업을 분리하여 커넥션 고갈 문제를 해결합니다.
+     */
     @Transactional
     public void sendNotification(UserEntity receiver, String message, String url) {
         Notification notification = Notification.builder()
@@ -67,7 +72,14 @@ public class NotificationService {
         notificationRepository.save(notification);
         log.info("SSE: Notification saved for user: {}. Message: {}", receiver.getUserId(), message);
 
-        sendToClient(receiver.getUserId(), "notification", NotificationDto.fromEntity(notification));
+        // [핵심 수정] DB 트랜잭션이 성공적으로 커밋된 '이후에' SSE 메시지를 전송하도록 스케줄링합니다.
+        // 이렇게 하면 네트워크 I/O 동안 DB 커넥션을 점유하지 않습니다.
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                sendToClient(receiver.getUserId(), "notification", NotificationDto.fromEntity(notification));
+            }
+        });
     }
 
     private void sendToClient(String userId, String eventName, Object data) {

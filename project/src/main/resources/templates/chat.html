@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>실시간 채팅 - SEAIRHUB</title>
+    <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/layout.css}">
+    <link rel="stylesheet" th:href="@{/css/components.css}">
+    <style>
+        .chat-layout { display: flex; height: calc(100vh - 65px); /* 헤더 높이 제외 */ }
+        .chat-list-panel { width: 320px; border-right: 1px solid var(--border-color); flex-shrink: 0; display: flex; flex-direction: column; }
+        .chat-list-header { padding: 16px; font-size: 18px; font-weight: 700; border-bottom: 1px solid var(--border-color); }
+        .chat-list { flex-grow: 1; overflow-y: auto; }
+        .chat-room-item { padding: 12px 16px; border-bottom: 1px solid #f1f3f5; cursor: pointer; position: relative; }
+        .chat-room-item:hover { background-color: #f8f9fa; }
+        .chat-room-item.active { background-color: #e7f5ff; font-weight: bold; }
+        .room-name { font-weight: 600; margin-bottom: 4px; }
+        .last-message { font-size: 14px; color: #868e96; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .unread-count { position: absolute; top: 12px; right: 16px; background-color: var(--danger-color); color: white; font-size: 11px; font-weight: bold; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
+        .chat-window { flex-grow: 1; display: flex; flex-direction: column; background-color: #f8f9fa; }
+        .chat-header { padding: 16px; border-bottom: 1px solid var(--border-color); font-weight: 600; background-color: white; }
+        .message-list { flex-grow: 1; overflow-y: auto; padding: 20px; }
+        .message-item { margin-bottom: 16px; display: flex; flex-direction: column; }
+        .message-bubble { padding: 10px 15px; border-radius: 18px; max-width: 60%; line-height: 1.5; }
+        .sender-name { font-size: 13px; color: #495057; margin-bottom: 4px; }
+        .message-item.my-message { align-items: flex-end; }
+        .my-message .sender-name { display: none; }
+        .my-message .message-bubble { background-color: #007bff; color: white; }
+        .message-item.other-message { align-items: flex-start; }
+        .other-message .message-bubble { background-color: white; border: 1px solid #e9ecef; }
+        .chat-input-area { padding: 16px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; background-color: white; }
+        .chat-input-area input { flex-grow: 1; padding: 10px; border: 1px solid #ced4da; border-radius: 6px; }
+        .chat-input-area button { padding: 10px 20px; }
+        #no-chat-selected { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #868e96; }
+    </style>
+</head>
+<body>
+    <div class="container" th:attr="data-user-seq=${#authentication.principal.userSeq}, data-user-name=${#authentication.principal.userName}">
+        <div sec:authorize="hasRole('fwd')" th:replace="~{fragments/sidebar :: sidebarFragment(activeMenu='chat')}"></div>
+        <div sec:authorize="hasRole('cus')" th:replace="~{fragments/CUS_sidebar :: cusSidebarFragment(activeMenu='chat')}"></div>
+
+        <main class="main-content">
+            <div th:replace="~{fragments/header :: headerFragment}"></div>
+
+            <div class="chat-layout">
+                <div class="chat-list-panel">
+                    <div class="chat-list-header">채팅 목록</div>
+                    <div class="chat-list" id="chat-list-container">
+                        </div>
+                </div>
+
+                <div class="chat-window">
+                    <div id="no-chat-selected">
+                        <span style="font-size: 48px;">💬</span>
+                        <h3>채팅방을 선택해주세요.</h3>
+                    </div>
+                    <div id="chat-room-view" style="display: none; height: 100%; flex-direction: column;">
+                        <div class="chat-header" id="chat-room-title"></div>
+                        <div class="message-list" id="message-list-container"></div>
+                        <div class="chat-input-area">
+                            <input type="text" id="chat-message-input" placeholder="메시지를 입력하세요..." disabled>
+                            <button id="send-message-btn" class="btn btn-primary" disabled>전송</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script th:src="@{/js/chat.js}"></script>
+</body>
+</html>

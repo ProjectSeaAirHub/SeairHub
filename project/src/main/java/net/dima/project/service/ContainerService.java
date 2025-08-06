@@ -42,6 +42,7 @@ public class ContainerService {
     private final UserRepository userRepository;
     private final RequestRepository requestRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final ChatService chatService;
 
 
     
@@ -440,6 +441,7 @@ public class ContainerService {
         container.setStatus(ContainerStatus.SETTLED);
         // [✅ 아래 코드 추가]
         eventPublisher.publishEvent(new NotificationEvents.ContainerStatusChangedEvent(this, container, "정산이 완료되었습니다."));
+        chatService.closeChatRoomsForSettledContainer(container);
 
     }
     

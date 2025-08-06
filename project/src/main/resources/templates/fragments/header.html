@@ -9,7 +9,7 @@
     </div>
     <div class="user-menu">
         <span th:text="${#authentication.principal.userName}">사용자 이름</span>
-        <a href="#" class="btn btn-user-info">내정보</a>
+        <a th:href="@{/my/info}" class="btn btn-user-info">내정보</a>
         
         <div class="notification-area" id="notification-area">
             <button type="button" class="notification-btn">
