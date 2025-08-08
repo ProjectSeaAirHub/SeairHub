@@ -7,16 +7,46 @@
     <link rel="stylesheet" th:href="@{/css/layout.css}">
     <link rel="stylesheet" th:href="@{/css/components.css}">
     <style>
-        .chat-layout { display: flex; height: calc(100vh - 65px); /* 헤더 높이 제외 */ }
-        .chat-list-panel { width: 320px; border-right: 1px solid var(--border-color); flex-shrink: 0; display: flex; flex-direction: column; }
-        .chat-list-header { padding: 16px; font-size: 18px; font-weight: 700; border-bottom: 1px solid var(--border-color); }
-        .chat-list { flex-grow: 1; overflow-y: auto; }
-        .chat-room-item { padding: 12px 16px; border-bottom: 1px solid #f1f3f5; cursor: pointer; position: relative; }
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            background-color: #fff;
+        }
+        .chat-layout { display: flex; height: 100%; }
+        .chat-list-panel { width: 220px; border-right: 1px solid var(--border-color); flex-shrink: 0; display: flex; flex-direction: column; }
+        .chat-list-header { padding: 16px; font-size: 18px; font-weight: 700; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        #add-group-btn { background: none; border: 1px solid #ced4da; color: #495057; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
+        .chat-list { flex-grow: 1; overflow-y: auto; padding: 8px; }
+        .chat-group { margin-bottom: 12px; border: 1px solid #e9ecef; border-radius: 8px; background: #f8f9fa; }
+        .chat-group-header { padding: 8px 12px; font-weight: 600; font-size: 14px; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .chat-group-header .delete-group-btn { font-size: 14px; color: #fa5252; cursor: pointer; }
+        .chat-group-content { min-height: 20px; padding: 8px; }
+        .chat-group-content.drag-over { background-color: #e7f5ff; }
+        .chat-room-item { padding: 12px 16px; cursor: grab; position: relative; background-color: white; border-radius: 6px; margin-bottom: 4px; border: 1px solid #f1f3f5; }
         .chat-room-item:hover { background-color: #f8f9fa; }
-        .chat-room-item.active { background-color: #e7f5ff; font-weight: bold; }
+        .chat-room-item.active { background-color: #e7f5ff; font-weight: bold; border-color: #a5d8ff; }
         .room-name { font-weight: 600; margin-bottom: 4px; }
         .last-message { font-size: 14px; color: #868e96; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .unread-count { position: absolute; top: 12px; right: 16px; background-color: var(--danger-color); color: white; font-size: 11px; font-weight: bold; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
+        
+        /* [✅ 수정] 채팅방 목록의 숫자 배지 스타일 수정 */
+        .unread-count { 
+            position: absolute; 
+            top: 8px;
+            right: 8px;
+            background-color: var(--danger-color); 
+            color: white; 
+            font-size: 11px; 
+            font-weight: bold; 
+            border-radius: 50%; 
+            min-width: 20px;
+            height: 20px; 
+            padding: 0 4px;
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            box-sizing: border-box;
+            border: 2px solid white;
+        }
         .chat-window { flex-grow: 1; display: flex; flex-direction: column; background-color: #f8f9fa; }
         .chat-header { padding: 16px; border-bottom: 1px solid var(--border-color); font-weight: 600; background-color: white; }
         .message-list { flex-grow: 1; overflow-y: auto; padding: 20px; }
@@ -30,41 +60,53 @@
         .other-message .message-bubble { background-color: white; border: 1px solid #e9ecef; }
         .chat-input-area { padding: 16px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; background-color: white; }
         .chat-input-area input { flex-grow: 1; padding: 10px; border: 1px solid #ced4da; border-radius: 6px; }
-        .chat-input-area button { padding: 10px 20px; }
         #no-chat-selected { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #868e96; }
+
+        #send-message-btn { width: 42px; height: 42px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #ffffff; border: 0.5px solid #000000 }
+        #send-message-btn img { width: 20px; height: 20px; }
     </style>
 </head>
-<body>
-    <div class="container" th:attr="data-user-seq=${#authentication.principal.userSeq}, data-user-name=${#authentication.principal.userName}">
-        <div sec:authorize="hasRole('fwd')" th:replace="~{fragments/sidebar :: sidebarFragment(activeMenu='chat')}"></div>
-        <div sec:authorize="hasRole('cus')" th:replace="~{fragments/CUS_sidebar :: cusSidebarFragment(activeMenu='chat')}"></div>
-
-        <main class="main-content">
-            <div th:replace="~{fragments/header :: headerFragment}"></div>
-
-            <div class="chat-layout">
-                <div class="chat-list-panel">
-                    <div class="chat-list-header">채팅 목록</div>
-                    <div class="chat-list" id="chat-list-container">
-                        </div>
+<body th:attr="data-user-seq=${#authentication.principal.userSeq}, data-user-name=${#authentication.principal.userName}">
+    <div class="chat-layout">
+        <div class="chat-list-panel">
+            <div class="chat-list-header">
+                <span>채팅 목록</span>
+                <button id="add-group-btn">+ 그룹 추가</button>
+            </div>
+            <div class="chat-list" id="chat-list-container">
                 </div>
+        </div>
 
-                <div class="chat-window">
-                    <div id="no-chat-selected">
-                        <span style="font-size: 48px;">💬</span>
-                        <h3>채팅방을 선택해주세요.</h3>
-                    </div>
-                    <div id="chat-room-view" style="display: none; height: 100%; flex-direction: column;">
-                    <div class="chat-header" id="chat-room-title" style="cursor: pointer;" title="클릭하여 채팅방 이름 수정"></div>
-                        <div class="message-list" id="message-list-container"></div>
-                        <div class="chat-input-area">
-                            <input type="text" id="chat-message-input" placeholder="메시지를 입력하세요..." disabled>
-                            <button id="send-message-btn" class="btn btn-primary" disabled>전송</button>
-                        </div>
-                    </div>
+        <div class="chat-window">
+            <div id="no-chat-selected">
+                <span style="font-size: 48px;">💬</span>
+                <h3>채팅방을 선택해주세요.</h3>
+            </div>
+            <div id="chat-room-view" style="display: none; height: 100%; flex-direction: column;">
+            <div class="chat-header" id="chat-room-title" style="cursor: pointer;" title="클릭하여 채팅방 이름 수정"></div>
+                <div class="message-list" id="message-list-container"></div>
+                <div class="chat-input-area">
+                    <input type="text" id="chat-message-input" placeholder="메시지를 입력하세요..." disabled>
+                    <button id="send-message-btn" class="btn btn-primary" disabled><img th:src="@{/images/send_message.png}" alt="전송"></button>
                 </div>
             </div>
-        </main>
+        </div>
+    </div>
+    
+    <div class="modal-wrapper" id="input-modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 id="input-modal-title"></h3>
+                <button class="btn-close" id="input-modal-close">×</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="input-modal-field" class="form-input" style="width:100%; padding:12px; border-radius: 8px;">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-cancel" id="input-modal-cancel">취소</button>
+                <button class="btn btn-primary" id="input-modal-confirm">확인</button>
+            </div>
+        </div>
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>

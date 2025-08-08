@@ -46,6 +46,7 @@ public class MyOfferDto {
                 case FOR_SALE: statusText = "재판매중"; break;
                 case RESOLD: statusText = "재판매 완료"; break;
                 case CONFIRMED: statusText = "확정"; break;
+                case COMPLETED: statusText = "확정"; break;
                 default: statusText = status.name();
             }
         }

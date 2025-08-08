@@ -27,19 +27,18 @@
                     -->
                     <li><a th:href="@{/fwd/fwdRequest}"
                             th:classappend="${activeMenu == 'fwdRequest'} ? 'is-active' : ''">견적요청조회</a></li>
-                    <li><a th:href="@{/fwd/my-posted-requests}"
-                            th:classappend="${activeMenu == 'my-posted-requests'} ? 'is-active' : ''">나의요청조회</a></li>
+
                     <li><a th:href="@{/fwd/my-offers}"
                             th:classappend="${activeMenu == 'my-offers'} ? 'is-active' : ''">나의제안조회</a></li>
                     <li><a th:href="@{/fwd/container-inquiry}"
                             th:classappend="${activeMenu == 'container-inquiry'} ? 'is-active' : ''">컨테이너조회</a></li>
+                    <li><a th:href="@{/fwd/my-posted-requests}"
+                            th:classappend="${activeMenu == 'my-posted-requests'} ? 'is-active' : ''">재판매건관리</a></li>
                     <li><a th:href="@{/fwd/transaction_history}"
                             th:classappend="${activeMenu == 'transaction_history'} ? 'is-active' : ''">나의거래내역</a></li>
                 </ul>
             </li>
-			<li class="menu-item" th:classappend="${activeMenu == 'chat'} ? 'is-active' : ''">
-			    <a th:href="@{/chat}">채팅</a>
-			</li>
+
             <li class="menu-item">
                 <a href="#">결제</a>
             </li>

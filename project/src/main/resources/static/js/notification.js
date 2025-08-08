@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const notiBtn = notificationArea.querySelector('.notification-btn');
     const markAllReadBtn = document.getElementById('mark-all-read-btn');
 
-    // --- 🚀 [핵심 추가] 쓰로틀링(Throttling) 함수 ---
     let throttleTimer = null;
     const throttle = (callback, time) => {
         if (!throttleTimer) {
@@ -19,7 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }, time);
         }
     };
-    // --- 🚀 ---
 
     const updateCountUI = (count) => {
         const numericCount = parseInt(count, 10);
@@ -69,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const eventSource = new EventSource('/api/notifications/subscribe');
 
+        // 1. 기존 알림 리스너
         eventSource.addEventListener('unreadCount', (event) => {
             updateCountUI(event.data);
         });
@@ -78,6 +77,12 @@ document.addEventListener('DOMContentLoaded', () => {
             addNotificationToList(newNoti);
             const currentCount = parseInt(countElement.textContent, 10) || 0;
             updateCountUI(currentCount + 1);
+        });
+
+        // 2. [✅ 추가] 채팅 알림 리스너
+        eventSource.addEventListener('unreadChat', (event) => {
+            // 커스텀 이벤트를 발생시켜 다른 스크립트들이 이 이벤트를 받아서 처리하도록 함
+            document.dispatchEvent(new CustomEvent('sse:unreadChat', { detail: event.data }));
         });
 
         eventSource.onerror = (error) => {
@@ -137,7 +142,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- 🚀 [핵심 수정] 초기화 함수를 쓰로틀링으로 감싸서 호출 ---
-    // 2초(2000ms)에 한 번만 initializeNotifications 함수가 실행되도록 합니다.
-    throttle(initializeNotifications, 2000);
+    throttle(initializeNotifications, 4000);
 });

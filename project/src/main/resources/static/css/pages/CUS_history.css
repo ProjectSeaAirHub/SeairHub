@@ -143,3 +143,21 @@
     border: 1px solid var(--border-color);
     color: var(--dark-color);
 }
+
+/* [✅ 추가] '정산' 버튼 전용 주황색 스타일 */
+.btn-orange {
+    background-color: #FC512C;
+    color: white;
+    border-color: #FC512C;
+    font-weight: 700;
+}
+
+.btn-orange:hover {
+    background-color: #E84A28;
+    border-color: #E84A28;
+}
+
+/* [✅ 추가] 조회 버튼과 정산 버튼 사이 간격 */
+#search-form .btn-primary {
+    margin-right: 8px;
+}

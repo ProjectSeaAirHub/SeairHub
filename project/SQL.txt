@@ -1,39 +1,17 @@
--- =================================================================
--- SeairHub : B2B 물류 중개 플랫폼 데이터베이스 생성 스크립트
--- 생성 순서: users -> cargo -> container -> request -> offer
--- =================================================================
-
-
-COMMIT;
-SELECT * FROM container;
 USE dima5;
 -- 1. 외래 키 제약 조건 체크 기능 끄기
 SET FOREIGN_key_checks = 0;
 
 -- 2. 순서 상관없이 모든 테이블 삭제
-DROP TABLE IF EXISTS container, cargo, request, offer, container_cargo;
+DROP TABLE IF EXISTS container, cargo, request, offer, container_cargo, notification, chat_room, chat_participant, chat_message;
+DROP TABLE IF EXISTS scfi_data;
 
 -- 3. (★★★ 매우 중요 ★★★) 기능 다시 켜기
-
 SET FOREIGN_key_checks = 1;
 
-DELETE FROM users;
-DELETE FROM cargo;
-DELETE FROM container;
-DELETE FROM request;
-DELETE FROM offer;
-DELETE FROM container_cargo;
-
--- 테이블 ID 초기화 (AUTO_INCREMENT 값 초기화)
-ALTER TABLE users AUTO_INCREMENT = 5;
-ALTER TABLE cargo AUTO_INCREMENT = 1;
-ALTER TABLE request AUTO_INCREMENT = 1;
-ALTER TABLE offer AUTO_INCREMENT = 1;
 
 
-
-
--- 1. 사용자(users) 테이블
+-- 1. 사용자(users) 테이블 (건너뛰어도 됨)
 CREATE TABLE users (
     user_seq INT AUTO_INCREMENT PRIMARY KEY,
     provider VARCHAR(50) NOT NULL DEFAULT 'local',
@@ -48,6 +26,7 @@ CREATE TABLE users (
     business_license_orig_name VARCHAR(255),
     business_license_saved_name VARCHAR(255),
     roles VARCHAR(50) NOT NULL,
+    approval_status varchar(20),
     create_date DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -75,6 +54,9 @@ CREATE TABLE container (
     status VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED',
     FOREIGN KEY (forwarder_id) REFERENCES users(user_seq) ON DELETE CASCADE
 );
+
+-- 3-1. 선박 실시간 추적을 위한 IMO 번호 컬럼 추가
+ALTER TABLE container ADD COLUMN imo_number VARCHAR(20) NULL COMMENT '선박 IMO 번호';
 
 -- 4. 운송 요청(request) 테이블 (수정)
 -- 화물을 운송해달라는 '요청 행위'를 저장합니다. 화주 또는 포워더가 요청자가 될 수 있습니다.
@@ -137,339 +119,145 @@ CREATE TABLE container_cargo (
 ALTER TABLE request ADD CONSTRAINT fk_request_source_offer FOREIGN KEY (source_offer_id) REFERENCES offer(offer_id);
 
 
-SELECT * FROM container;
+-- 8 알림용 테이블 
+-- 알림 정보를 저장할 notification 테이블 생성
+CREATE TABLE notification (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_seq INT NOT NULL COMMENT '알림 수신자 ID',
+    message VARCHAR(255) NOT NULL COMMENT '알림 메시지',
+    url VARCHAR(255) COMMENT '클릭 시 이동할 URL',
+    is_read BOOLEAN NOT NULL DEFAULT FALSE COMMENT '읽음 여부',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시간',
+    FOREIGN KEY (user_seq) REFERENCES users(user_seq) ON DELETE CASCADE
+);
+
+-- =================================================================
+-- 9. 실시간 채팅 기능 테이블 추가
+-- =================================================================
+
+-- 9-1. 채팅방 테이블
+CREATE TABLE chat_room (
+    chat_room_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    offer_id BIGINT NOT NULL UNIQUE COMMENT '계약(낙찰된 제안)의 ID',
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT 'ACTIVE, CLOSED',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (offer_id) REFERENCES offer(offer_id)
+);
+
+-- 9-2. 채팅 참여자 테이블
+CREATE TABLE chat_participant (
+    participant_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    chat_room_id BIGINT NOT NULL,
+    user_seq INT NOT NULL,
+    role_in_chat VARCHAR(50) NOT NULL COMMENT '채팅방 내 역할 (e.g., REQUESTER, PROVIDER)',
+    FOREIGN KEY (chat_room_id) REFERENCES chat_room(chat_room_id),
+    FOREIGN KEY (user_seq) REFERENCES users(user_seq),
+    UNIQUE KEY uk_chatroom_user (chat_room_id, user_seq)
+);
+-- 9. 채팅방 이름 커스텀 기능을 위한 컬럼 추가
+ALTER TABLE chat_participant ADD COLUMN custom_room_name VARCHAR(255) NULL COMMENT '사용자가 설정한 채팅방 별칭';
+
+-- 9-3. 채팅 메시지 테이블
+CREATE TABLE chat_message (
+    message_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    chat_room_id BIGINT NOT NULL,
+    sender_seq INT NOT NULL,
+    message_content TEXT NOT NULL,
+    sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    FOREIGN KEY (chat_room_id) REFERENCES chat_room(chat_room_id),
+    FOREIGN KEY (sender_seq) REFERENCES users(user_seq)
+);
 
 
+-- 10. SCFI 데이터
+CREATE TABLE scfi_data (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    record_date DATE NOT NULL UNIQUE,
+    index_value DECIMAL(10, 2) NOT NULL
+);
 
--- 데이터 생성
--- ================================================================= --
--- SEAIRHUB 프로젝트 종합 시뮬레이션 데이터 생성 스크립트
--- 화주 2명 (1, 2), 포워더 2명 (3, 4) 기준
--- ================================================================= --
-
--- [사용자 설정] 테스트에 사용할 사용자 ID (users 테이블의 user_seq 값)
-SET @SHIPPER1 = 1, @SHIPPER2 = 2;
-SET @FWD1 = 3, @FWD2 = 4;
-
--- ================================================================= --
--- [사전 준비] 포워더들의 컨테이너 자산 생성 (총 10개)
--- ================================================================= --
-INSERT INTO container (container_id, forwarder_id, departure_port, arrival_port, etd, eta, size, capacity_cbm, status)
-VALUES
-    ('SEAU0000001', @FWD1, '부산', 'LA', '2025-08-10', '2025-08-25', '40ft', 55.0, 'SCHEDULED'),
-    ('SEAU0000002', @FWD1, '부산', '도쿄', '2025-08-12', '2025-08-14', '20ft', 26.0, 'SCHEDULED'),
-    ('SEAU0000003', @FWD1, '인천', '상해', '2025-08-15', '2025-08-17', '40ft', 55.0, 'CONFIRMED'),
-    ('SEAU0000004', @FWD1, '부산', '싱가포르', '2025-09-01', '2025-09-10', '20ft', 26.0, 'SHIPPED'),
-    ('SEAU0000005', @FWD1, '인천', 'LA', '2025-07-20', '2025-08-05', '40ft', 55.0, 'COMPLETED'),
-    ('SEAU0000006', @FWD2, '부산', 'LA', '2025-08-11', '2025-08-26', '40ft', 55.0, 'SCHEDULED'),
-    ('SEAU0000007', @FWD2, '인천', 'LA', '2025-08-18', '2025-09-02', '20ft', 26.0, 'SCHEDULED'),
-    ('SEAU0000008', @FWD2, '부산', '상해', '2025-08-20', '2025-08-22', '40ft', 55.0, 'CONFIRMED'),
-    ('SEAU0000009', @FWD2, '인천', '도쿄', '2025-08-25', '2025-08-27', '20ft', 26.0, 'SCHEDULED'),
-    ('SEAU0000010', @FWD2, '부산', 'LA', '2025-07-25', '2025-08-10', '40ft', 55.0, 'SETTLED');
-
-
--- ================================================================= --
--- 시나리오 1: [활발한 입찰] 마감일이 넉넉한 공개 요청 (40건)
--- ================================================================= --
--- 화주 1의 활발한 요청 (20건)
-INSERT INTO cargo (owner_id, item_name, incoterms, total_cbm, is_dangerous)
-VALUES
-    (@SHIPPER1, '자동차 부품 A', 'FOB', 15.5, false), (@SHIPPER1, '화장품 세트', 'CIF', 8.2, false),
-    (@SHIPPER1, '의류 (여름 시즌)', 'FOB', 22.0, false), (@SHIPPER1, '반도체 장비 부품', 'EXW', 5.0, true),
-    (@SHIPPER1, '가구 (조립식)', 'FOB', 30.1, false), (@SHIPPER1, '의료기기', 'CIF', 12.8, true),
-    (@SHIPPER1, 'K-POP 앨범', 'FOB', 18.5, false), (@SHIPPER1, '농기계 부품', 'EXW', 25.0, false),
-    (@SHIPPER1, '주방용품', 'FOB', 11.3, false), (@SHIPPER1, '스포츠 용품', 'CIF', 9.8, false),
-    (@SHIPPER1, '캠핑 장비', 'FOB', 14.0, false), (@SHIPPER1, '가전제품 (TV)', 'CIF', 28.0, false),
-    (@SHIPPER1, '도서류', 'FOB', 10.0, false), (@SHIPPER1, '인테리어 소품', 'EXW', 6.5, false),
-    (@SHIPPER1, '음료 (캔)', 'FOB', 17.2, false), (@SHIPPER1, '원단', 'CIF', 21.0, false),
-    (@SHIPPER1, '애완동물 사료', 'FOB', 13.8, false), (@SHIPPER1, '문구류', 'EXW', 4.5, false),
-    (@SHIPPER1, '건축 자재 샘플', 'FOB', 19.5, false), (@SHIPPER1, '미술품', 'CIF', 3.0, true);
-
--- 화주 2의 활발한 요청 (20건)
-INSERT INTO cargo (owner_id, item_name, incoterms, total_cbm, is_dangerous)
-VALUES
-    (@SHIPPER2, '디스플레이 패널', 'FOB', 19.0, true), (@SHIPPER2, '냉동식품 (김치)', 'CIF', 13.5, false),
-    (@SHIPPER2, '스마트폰 액세서리', 'FOB', 7.5, false), (@SHIPPER2, '자동차 타이어', 'EXW', 24.0, false),
-    (@SHIPPER2, '조명기구', 'FOB', 11.5, false), (@SHIPPER2, '유아용품', 'CIF', 16.0, false),
-    (@SHIPPER2, '건강 보조 식품', 'FOB', 8.0, false), (@SHIPPER2, '신발', 'EXW', 18.0, false),
-    (@SHIPPER2, '공구 세트', 'FOB', 12.5, false), (@SHIPPER2, '원예용품', 'CIF', 14.2, false),
-    (@SHIPPER2, '커피 원두', 'FOB', 20.0, false), (@SHIPPER2, '플라스틱 원료', 'CIF', 23.0, false),
-    (@SHIPPER2, '게임기', 'FOB', 9.0, false), (@SHIPPER2, '자전거 부품', 'EXW', 15.8, false),
-    (@SHIPPER2, '전기차 배터리 부품', 'FOB', 18.0, true), (@SHIPPER2, '태양광 패널', 'CIF', 29.5, false),
-    (@SHIPPER2, '서적 (만화책)', 'FOB', 11.0, false), (@SHIPPER2, '악기 (기타)', 'EXW', 4.0, false),
-    (@SHIPPER2, '사무용 가구', 'FOB', 27.0, false), (@SHIPPER2, '로봇 청소기', 'CIF', 10.5, false);
-
--- 생성된 화물 40건에 대한 요청(request) 생성
-INSERT INTO request (cargo_id, requester_id, departure_port, arrival_port, deadline, trade_type, transport_type, desired_arrival_date, status)
-SELECT
-    cargo_id,
-    owner_id,
-    CASE WHEN cargo_id % 4 = 0 THEN '부산' ELSE '인천' END,
-    CASE WHEN cargo_id % 4 = 0 THEN 'LA' WHEN cargo_id % 4 = 1 THEN '도쿄' WHEN cargo_id % 4 = 2 THEN '상해' ELSE '싱가포르' END,
-    DATE_ADD(NOW(), INTERVAL (7 + cargo_id % 5) DAY), -- 마감일: 7~11일 후
-    CASE WHEN cargo_id % 2 = 0 THEN '수출' ELSE '수입' END,
-    CASE WHEN cargo_id % 3 = 0 THEN '항공' ELSE '해상' END,
-    DATE_ADD(NOW(), INTERVAL (30 + cargo_id % 10) DAY), -- 희망 도착일: 30~39일 후
-    'OPEN'
-FROM cargo WHERE cargo_id > (SELECT IFNULL(MAX(cargo_id), 0) - 40 FROM cargo);
-
--- 위 요청 중 일부에 대한 포워더들의 입찰(offer) 데이터 생성
-INSERT INTO offer (request_id, container_id, forwarder_id, price, currency, status)
-SELECT
-    r.request_id,
-    'SEAU0000001',
-    @FWD1,
-    (1500 + r.request_id % 100 * 10),
-    'USD',
-    'PENDING'
-FROM request r WHERE r.requester_id = @SHIPPER1 AND r.departure_port = '부산' AND r.arrival_port = 'LA' LIMIT 5;
-
-INSERT INTO offer (request_id, container_id, forwarder_id, price, currency, status)
-SELECT
-    r.request_id,
-    'SEAU0000006',
-    @FWD2,
-    (1550 + r.request_id % 100 * 10),
-    'USD',
-    'PENDING'
-FROM request r WHERE r.requester_id = @SHIPPER1 AND r.departure_port = '부산' AND r.arrival_port = 'LA' LIMIT 5;
-
-INSERT INTO offer (request_id, container_id, forwarder_id, price, currency, status)
-SELECT
-    r.request_id,
-    'SEAU0000009',
-    @FWD2,
-    (800000 + r.request_id % 100 * 1000),
-    'KRW',
-    'PENDING'
-FROM request r WHERE r.requester_id = @SHIPPER2 AND r.departure_port = '인천' AND r.arrival_port = '도쿄' LIMIT 5;
-
--- ================================================================= --
--- 시나리오 2: [마감] 입찰자가 없거나, 입찰은 있었지만 마감된 요청 (20건)
--- ================================================================= --
-INSERT INTO cargo (owner_id, item_name, incoterms, total_cbm, is_dangerous)
-VALUES
-    (@SHIPPER1, '특수 규격 화물', 'FOB', 40.0, false), (@SHIPPER1, '대형 기계 설비', 'EXW', 50.0, false),
-    (@SHIPPER1, '이벤트용 무대 장치', 'FOB', 35.0, false), (@SHIPPER1, '연구용 시료', 'CIF', 1.5, true),
-    (@SHIPPER1, '골동품 가구', 'EXW', 10.0, false), (@SHIPPER2, '위험물 Class 3', 'FOB', 15.0, true),
-    (@SHIPPER2, '중고 자동차', 'CIF', 20.0, false), (@SHIPPER2, '공연용 음향 장비', 'FOB', 18.0, false),
-    (@SHIPPER2, '대형 유리판', 'EXW', 22.0, true), (@SHIPPER2, '태피스트리', 'CIF', 5.5, false),
-    -- (10건 추가)
-    (@SHIPPER1, '석재', 'FOB', 25.0, false), (@SHIPPER1, '요트 부품', 'EXW', 33.0, false),
-    (@SHIPPER1, '전시용 조형물', 'FOB', 28.0, false), (@SHIPPER1, '살아있는 동물', 'CIF', 12.0, true),
-    (@SHIPPER1, '클래식카', 'EXW', 22.0, false), (@SHIPPER2, '위험물 Class 1', 'FOB', 10.0, true),
-    (@SHIPPER2, '농업용 트랙터', 'CIF', 30.0, false), (@SHIPPER2, 'LED 전광판', 'FOB', 19.0, false),
-    (@SHIPPER2, '초정밀 현미경', 'EXW', 8.0, true), (@SHIPPER2, '고서적', 'CIF', 3.5, false);
-
-INSERT INTO request (cargo_id, requester_id, departure_port, arrival_port, deadline, trade_type, transport_type, desired_arrival_date, status)
-SELECT
-    cargo_id,
-    owner_id,
-    '부산',
-    '로테르담',
-    DATE_SUB(NOW(), INTERVAL (1 + cargo_id % 3) DAY), -- 마감일: 1~3일 전
-    '수출',
-    '해상',
-    DATE_ADD(NOW(), INTERVAL 60 DAY),
-    'OPEN' -- ★ 상태는 OPEN이지만 마감일이 지남
-FROM cargo WHERE cargo_id > (SELECT IFNULL(MAX(cargo_id), 0) - 20 FROM cargo);
-
--- 이 중 절반은 FWD1이 입찰했지만, 마감일이 지나 '거절'로 표시될 것임
-INSERT INTO offer (request_id, container_id, forwarder_id, price, currency, status)
-SELECT
-    r.request_id,
-    'SEAU0000001',
-    @FWD1,
-    3000,
-    'USD',
-    'PENDING' -- ★ 상태는 PENDING이지만 마감일이 지남
-FROM request r WHERE r.requester_id = @SHIPPER1 AND r.status = 'OPEN' AND r.deadline < NOW() LIMIT 5;
-
-
--- ================================================================= --
--- 시나리오 3: [거래 완료] 낙찰되어 운송이 완료되었거나 진행중인 요청 (30건)
--- ================================================================= --
-INSERT INTO cargo (owner_id, item_name, incoterms, total_cbm, is_dangerous)
-VALUES
-    (@SHIPPER1, '스마트 워치', 'FOB', 8.8, false), (@SHIPPER1, '블루투스 스피커', 'CIF', 6.0, false),
-    (@SHIPPER1, '전기 자전거', 'FOB', 12.0, false), (@SHIPPER1, '드론', 'EXW', 4.0, true),
-    (@SHIPPER1, 'VR 헤드셋', 'FOB', 7.2, false), (@SHIPPER1, '인공지능 스피커', 'CIF', 5.5, false),
-    (@SHIPPER1, '태블릿 PC', 'FOB', 9.5, false), (@SHIPPER1, '게이밍 의자', 'EXW', 15.0, false),
-    (@SHIPPER1, '그래픽 카드', 'FOB', 3.3, true), (@SHIPPER1, '피규어', 'CIF', 2.5, false),
-    (@SHIPPER2, '화학 약품 B', 'FOB', 14.0, true), (@SHIPPER2, '섬유 원료', 'CIF', 22.5, false),
-    (@SHIPPER2, '완구류', 'FOB', 13.0, false), (@SHIPPER2, '자동차 엔진오일', 'EXW', 18.5, true),
-    (@SHIPPER2, '가공 목재', 'FOB', 28.0, false), (@SHIPPER2, '프린터', 'CIF', 10.0, false),
-    (@SHIPPER2, '서버용 랙', 'FOB', 17.5, false), (@SHIPPER2, '의약품 원료', 'EXW', 5.0, true),
-    (@SHIPPER2, '페인트', 'FOB', 20.5, true), (@SHIPPER2, '솔벤트', 'CIF', 16.5, true),
-    -- (10건 추가)
-    (@SHIPPER1, '모니터', 'FOB', 11.8, false), (@SHIPPER1, '키보드', 'CIF', 4.0, false),
-    (@SHIPPER1, '마우스', 'FOB', 2.0, false), (@SHIPPER1, '노트북', 'EXW', 5.0, false),
-    (@SHIPPER1, '프로젝터', 'FOB', 8.5, false), (@SHIPPER2, '산업용 접착제', 'CIF', 19.5, true),
-    (@SHIPPER2, '화장품 원료', 'FOB', 9.5, false), (@SHIPPER2, '향수', 'EXW', 3.0, true),
-    (@SHIPPER2, '식품 첨가물', 'FOB', 12.0, false), (@SHIPPER2, '와인', 'CIF', 14.0, false);
-
--- 위 화물 30건에 대한 요청 생성
-INSERT INTO request (cargo_id, requester_id, departure_port, arrival_port, deadline, trade_type, transport_type, desired_arrival_date, status)
-SELECT
-    cargo_id,
-    owner_id,
-    '부산',
-    CASE WHEN cargo_id % 3 = 0 THEN 'LA' WHEN cargo_id % 3 = 1 THEN '상해' ELSE '도쿄' END,
-    DATE_SUB(NOW(), INTERVAL (10 + cargo_id % 10) DAY), -- 마감일: 10~19일 전
-    '수출',
-    '해상',
-    DATE_ADD(NOW(), INTERVAL 15 DAY),
-    'CLOSED' -- ★ 이미 낙찰된 요청
-FROM cargo WHERE cargo_id > (SELECT IFNULL(MAX(cargo_id), 0) - 30 FROM cargo);
-
--- 위 요청 30건에 대한 입찰 및 낙찰 데이터 생성
--- 각 요청에 대해 FWD1, FWD2가 입찰하고, 둘 중 하나가 낙찰
-INSERT INTO offer (request_id, container_id, forwarder_id, price, currency, status)
-SELECT
-    r.request_id,
-    'SEAU0000003',
-    @FWD1,
-    2000, 'USD',
-    CASE 
-        WHEN r.request_id % 2 = 0 THEN 
-            CASE 
-                WHEN r.request_id % 8 = 0 THEN 'COMPLETED'
-                WHEN r.request_id % 8 = 2 THEN 'SHIPPED'
-                ELSE 'CONFIRMED'
-            END
-        ELSE 'REJECTED'
-    END
-FROM request r WHERE r.status = 'CLOSED';
-
-INSERT INTO offer (request_id, container_id, forwarder_id, price, currency, status)
-SELECT
-    r.request_id,
-    'SEAU0000008',
-    @FWD2,
-    2100, 'USD',
-    CASE 
-        WHEN r.request_id % 2 = 1 THEN 
-            CASE 
-                WHEN r.request_id % 6 = 1 THEN 'COMPLETED'
-                WHEN r.request_id % 6 = 3 THEN 'SHIPPED'
-                ELSE 'ACCEPTED'
-            END
-        ELSE 'REJECTED'
-    END
-FROM request r WHERE r.status = 'CLOSED';
-
--- 낙찰된 제안에 대한 CBM 적재 (container_cargo)
-INSERT INTO container_cargo (container_id, offer_id, cbm_loaded, is_external, freight_cost, freight_currency)
-SELECT
-    o.container_id,
-    o.offer_id,
-    (SELECT total_cbm FROM cargo c WHERE c.cargo_id = r.cargo_id),
-    false,
-    o.price,
-    o.currency
-FROM offer o JOIN request r ON o.request_id = r.request_id
-WHERE o.status IN ('ACCEPTED', 'CONFIRMED', 'SHIPPED', 'COMPLETED');
-
-
--- ================================================================= --
--- 시나리오 4: [재판매] 포워더가 낙찰 후 재판매하는 복잡한 요청 (20건)
--- ================================================================= --
--- 4-1. 화주가 올린 원본 요청 (10건)
-INSERT INTO cargo (owner_id, item_name, incoterms, total_cbm, is_dangerous)
-VALUES
-    (@SHIPPER1, '재판매용 의류', 'FOB', 20.0, false), (@SHIPPER1, '재판매용 전자제품', 'CIF', 15.0, false),
-    (@SHIPPER1, '재판매용 완구', 'FOB', 18.0, false), (@SHIPPER1, '재판매용 식품', 'CIF', 12.0, false),
-    (@SHIPPER1, '재판매용 가구', 'FOB', 25.0, false), (@SHIPPER2, '재판매용 기계부품', 'EXW', 19.0, false),
-    (@SHIPPER2, '재판매용 화학제품', 'FOB', 16.0, true), (@SHIPPER2, '재판매용 자동차부품', 'CIF', 21.0, false),
-    (@SHIPPER2, '재판매용 의료기기', 'EXW', 9.0, true), (@SHIPPER2, '재판매용 화장품', 'FOB', 11.0, false);
-
-INSERT INTO request (cargo_id, requester_id, departure_port, arrival_port, deadline, trade_type, transport_type, desired_arrival_date, status)
-SELECT
-    cargo_id,
-    owner_id,
-    '인천',
-    'LA',
-    DATE_SUB(NOW(), INTERVAL 20 DAY),
-    '수출', '해상',
-    DATE_ADD(NOW(), INTERVAL 10 DAY),
-    'CLOSED'
-FROM cargo WHERE cargo_id > (SELECT IFNULL(MAX(cargo_id), 0) - 10 FROM cargo);
-
--- 4-2. FWD1이 원본 요청을 모두 낙찰받음 (상태는 RESOLD 또는 FOR_SALE)
-INSERT INTO offer (request_id, container_id, forwarder_id, price, currency, status)
-SELECT
-    r.request_id,
-    'SEAU0000001',
-    @FWD1,
-    2500, 'USD',
-    CASE WHEN r.request_id % 2 = 0 THEN 'RESOLD' ELSE 'FOR_SALE' END
-FROM request r WHERE r.requester_id IN (@SHIPPER1, @SHIPPER2) AND r.status='CLOSED' AND r.cargo_id > (SELECT IFNULL(MAX(cargo_id), 0) - 10 FROM cargo);
-
--- FWD2는 모두 거절됨
-INSERT INTO offer (request_id, container_id, forwarder_id, price, currency, status)
-SELECT
-    r.request_id,
-    'SEAU0000006',
-    @FWD2,
-    2600, 'USD',
-    'REJECTED'
-FROM request r WHERE r.requester_id IN (@SHIPPER1, @SHIPPER2) AND r.status='CLOSED' AND r.cargo_id > (SELECT IFNULL(MAX(cargo_id), 0) - 10 FROM cargo);
-
--- 4-3. FWD1이 낙찰받은 제안을 근원으로 하는 재판매 요청(request) 10건 생성
-INSERT INTO request (cargo_id, requester_id, departure_port, arrival_port, deadline, trade_type, transport_type, desired_arrival_date, status, source_offer_id)
-SELECT
-    r.cargo_id,
-    @FWD1, -- 요청자가 FWD1
-    r.departure_port,
-    r.arrival_port,
-    DATE_ADD(NOW(), INTERVAL 5 DAY), -- 재판매 마감일은 5일 후
-    r.trade_type,
-    r.transport_type,
-    r.desired_arrival_date,
-    'OPEN',
-    o.offer_id -- 원본 제안 ID
-FROM offer o JOIN request r ON o.request_id = r.request_id
-WHERE o.forwarder_id = @FWD1 AND o.status IN ('RESOLD', 'FOR_SALE');
-
--- 4-4. FWD2가 재판매 요청 중 절반(RESOLD)을 최종 낙찰받는 시나리오
-INSERT INTO offer (request_id, container_id, forwarder_id, price, currency, status)
-SELECT
-    resale_req.request_id,
-    'SEAU0000007',
-    @FWD2,
-    2800, 'USD',
-    'ACCEPTED'
-FROM request resale_req
-WHERE resale_req.requester_id = @FWD1 AND resale_req.source_offer_id IS NOT NULL
-  AND (SELECT status FROM offer WHERE offer_id = resale_req.source_offer_id) = 'RESOLD';
-
--- 재판매 낙찰건에 대한 CBM 이동 (FWD1 -> FWD2)
--- 1) FWD1의 container_cargo 데이터는 ResaleService 로직에 의해 삭제됨 (여기선 생성 안함)
--- 2) FWD2의 container_cargo 데이터는 ResaleService 로직에 의해 생성됨 (아래에서 생성)
-INSERT INTO container_cargo (container_id, offer_id, cbm_loaded, is_external, freight_cost, freight_currency)
-SELECT
-    o.container_id,
-    o.offer_id,
-    (SELECT total_cbm FROM cargo c JOIN request r ON c.cargo_id = r.cargo_id WHERE r.request_id = o.request_id),
-    false,
-    o.price,
-    o.currency
-FROM offer o WHERE o.forwarder_id = @FWD2 AND o.status = 'ACCEPTED' AND o.request_id > (SELECT IFNULL(MAX(request_id), 0) - 10 FROM request);
-
-
--- ================================================================= --
--- 시나리오 5: [외부 화물] 포워더가 직접 등록한 화물 (5건)
--- ================================================================= --
-INSERT INTO container_cargo(container_id, offer_id, cbm_loaded, is_external, external_cargo_name, freight_cost, freight_currency)
-VALUES
-    ('SEAU0000001', NULL, 10.0, true, '개인 이사짐', 1800, 'USD'),
-    ('SEAU0000001', NULL, 5.0, true, '지인 부탁 물품', 900, 'USD'),
-    ('SEAU0000002', NULL, 8.0, true, '자사 샘플 발송', 500000, 'KRW'),
-    ('SEAU0000006', NULL, 12.0, true, '단골 화주 긴급 건', 2200, 'USD'),
-    ('SEAU0000007', NULL, 7.5, true, '오프라인 계약 건', 1300, 'USD');
+INSERT INTO scfi_data (record_date, index_value) VALUES
+('2024-01-05', 1896.65),
+('2024-01-12', 2206.03),
+('2024-01-19', 2239.61),
+('2024-01-26', 2179.09),
+('2024-02-02', 2049.57),
+('2024-02-09', 2166.31),
+('2024-02-23', 2109.91),
+('2024-03-01', 1979.12),
+('2024-03-08', 1885.74),
+('2024-03-15', 1772.92),
+('2024-03-22', 1732.57),
+('2024-03-29', 1730.98),
+('2024-04-03', 1745.43),
+('2024-04-12', 1757.04),
+('2024-04-19', 1769.54),
+('2024-04-26', 1940.63),
+('2024-05-10', 2305.79),
+('2024-05-17', 2520.76),
+('2024-05-24', 2703.43),
+('2024-05-31', 3044.77),
+('2024-06-07', 3184.87),
+('2024-06-14', 3379.22),
+('2024-06-21', 3475.60),
+('2024-06-28', 3714.32),
+('2024-07-05', 3733.80),
+('2024-07-12', 3674.86),
+('2024-07-19', 3542.44),
+('2024-07-26', 3447.87),
+('2024-08-02', 3332.67),
+('2024-08-09', 3253.89),
+('2024-08-16', 3281.36),
+('2024-08-23', 3097.63),
+('2024-08-30', 2963.38),
+('2024-09-06', 2726.58),
+('2024-09-13', 2510.95),
+('2024-09-20', 2366.24),
+('2024-09-27', 2135.08),
+('2024-10-11', 2062.57),
+('2024-10-18', 2062.15),
+('2024-10-25', 2185.33),
+('2024-11-01', 2303.44),
+('2024-11-08', 2331.58),
+('2024-11-15', 2251.90),
+('2024-11-22', 2160.08),
+('2024-11-29', 2233.83),
+('2024-12-06', 2256.46),
+('2024-12-13', 2384.40),
+('2024-12-20', 2390.17),
+('2024-12-27', 2460.34),
+('2025-01-03', 2505.17),
+('2025-01-10', 2290.68),
+('2025-01-17', 2130.81),
+('2025-01-24', 2045.45),
+('2025-02-07', 1896.65),
+('2025-02-14', 1758.82),
+('2025-02-21', 1595.08),
+('2025-02-28', 1515.29),
+('2025-03-07', 1436.30),
+('2025-03-13', 1319.34),
+('2025-03-21', 1292.75),
+('2025-03-28', 1356.88),
+('2025-04-03', 1392.78),
+('2025-04-11', 1394.68),
+('2025-04-18', 1370.58),
+('2025-04-25', 1347.84),
+('2025-04-30', 1340.93),
+('2025-05-09', 1345.17),
+('2025-05-16', 1479.39),
+('2025-05-23', 1586.12),
+('2025-05-30', 2072.71),
+('2025-06-06', 2240.35),
+('2025-06-13', 2088.24),
+('2025-06-20', 1869.59),
+('2025-06-27', 1861.51),
+('2025-07-04', 1763.49),
+('2025-07-11', 1733.29),
+('2025-07-18', 1646.90),
+('2025-07-25', 1592.59),
+('2025-08-01', 1550.74);
 
 
 
 COMMIT;
-
-

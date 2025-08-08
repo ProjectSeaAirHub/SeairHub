@@ -20,30 +20,37 @@ document.addEventListener('DOMContentLoaded', () => {
         closeModalBtn.addEventListener('click', closeModal);
         cancelBtn.addEventListener('click', closeModal);
 
-		// [추가] 출발/도착항 선택 연동 로직
+		// [✅ 수정] 출발/도착항 선택 연동 로직
 		const departurePortSelect = document.getElementById('departurePort');
 		const arrivalPortSelect = document.getElementById('arrivalPort');
 
+        const portGroups = {
+            '인천': 'KR', '부산': 'KR',
+            '도쿄': 'JP', '오사카': 'JP',
+            '상해': 'CN',
+            '싱가포르': 'SG'
+        };
+
 		const updatePortOptions = () => {
-		    const departureValue = departurePortSelect.value;
-		    const arrivalValue = arrivalPortSelect.value;
+            const selectedDeparture = departurePortSelect.value;
+            const selectedArrival = arrivalPortSelect.value;
+            const departureGroup = selectedDeparture ? portGroups[selectedDeparture] : null;
+            const arrivalGroup = selectedArrival ? portGroups[selectedArrival] : null;
 
 		    // 도착항의 모든 옵션을 순회하며 출발항에서 선택된 값을 비활성화
 		    for (const option of arrivalPortSelect.options) {
-		        if (option.value && option.value === departureValue) {
-		            option.disabled = true;
-		        } else {
-		            option.disabled = false;
-		        }
+                if (option.value) {
+                    const optionGroup = portGroups[option.value];
+                    option.disabled = (departureGroup && optionGroup === departureGroup);
+                }
 		    }
 
 		    // 출발항의 모든 옵션을 순회하며 도착항에서 선택된 값을 비활성화
 		    for (const option of departurePortSelect.options) {
-		        if (option.value && option.value === arrivalValue) {
-		            option.disabled = true;
-		        } else {
-		            option.disabled = false;
-		        }
+                if (option.value) {
+                    const optionGroup = portGroups[option.value];
+                    option.disabled = (arrivalGroup && optionGroup === arrivalGroup);
+                }
 		    }
 		};
 
@@ -59,7 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 itemName: document.getElementById('itemName').value,
                 incoterms: document.getElementById('incoterms').value,
                 totalCbm: parseFloat(document.getElementById('totalCbm').value),
-                isDangerous: document.getElementById('isDangerous').checked,
                 departurePort: document.getElementById('departurePort').value,
                 arrivalPort: document.getElementById('arrivalPort').value,
                 deadline: document.getElementById('deadline').value,

@@ -142,18 +142,20 @@ body.modal-open {
     font-size: 14px;
 }
 
+/* [✅ 수정] .notification-count의 position 관련 스타일을 #chat-fab 내부 배지로 이동 */
 .notification-count {
-    background-color: var(--danger-color);
+    background-color: #FC512C;
     color: white;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: bold;
     border-radius: 50%;
-    width: 16px;
-    height: 16px;
-    display: flex;
+    min-width: 18px; /* 최소 너비 */
+    height: 18px;
+    padding: 0 4px; /* 좌우 여백 */
+    display: none; 
     align-items: center;
     justify-content: center;
-    display: none; /* 기본 숨김 */
+    box-sizing: border-box;
 }
 
 .notification-dropdown {
@@ -235,19 +237,6 @@ body.modal-open {
     padding: 4px 8px;
 }
 
-.notification-count {
-    background-color: #FC512C; /* 포인트 색상 */
-    color: white;
-    font-size: 11px;
-    font-weight: bold;
-    border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    display: none; /* JS로 제어 */
-    align-items: center;
-    justify-content: center;
-}
-
 .notification-dropdown {
     display: none;
     position: absolute;
@@ -256,7 +245,6 @@ body.modal-open {
     margin-top: 10px;
     width: 350px;
     background-color: white;
-    border: 1px solid #e9ecef;
     border-radius: 12px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     z-index: 1010;
@@ -339,4 +327,68 @@ body.modal-open {
 
 .btn-logout-link:hover {
     text-decoration: underline; /* 마우스를 올리면 밑줄 표시 (선택사항) */
+}
+
+/* [✅ 수정] 채팅 위젯 관련 스타일 수정 */
+#chat-fab {
+    position: fixed; /* 화면 기준 고정 */
+    right: 40px;
+    bottom: 40px;
+    z-index: 1010;
+    width: 60px;
+    height: 60px;
+    background-color: var(--primary-color);
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+#chat-fab:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+}
+
+#chat-fab img {
+    width: 32px;
+    height: 32px;
+}
+
+#chat-fab .notification-count {
+    position: absolute;
+    top: 0;
+    right: 0;
+    transform: translate(30%, -30%);
+    border: 2px solid white;
+}
+
+#chat-widget-container {
+    position: fixed;
+    right: 40px;
+    bottom: 120px;
+    width: 650px;
+    height: 500px;
+    background-color: white;
+    border-radius: 16px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    z-index: 1009;
+    overflow: hidden;
+    display: none;
+    flex-direction: column;
+    transform-origin: bottom right;
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+}
+
+#chat-widget-container.is-open {
+    display: flex;
+}
+
+#chat-widget-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
 }

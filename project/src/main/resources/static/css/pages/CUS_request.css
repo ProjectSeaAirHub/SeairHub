@@ -361,32 +361,7 @@
     padding-right: 18px;}
     
     
-/* Floating Action Button (우측 하단 고정 버튼) */
-.fab {
-    position: fixed;
-    bottom: 40px;
-    right: 40px;
-    /* width와 height를 auto로 변경하고 padding으로 크기 조절 */
-    width: auto;
-    height: auto;
-    padding: 12px 24px;
-    border-radius: 50px; /* 알약 모양으로 변경 */
-    background-color: var(--danger-color);
-    color: white;
-    font-size: 16px; /* 폰트 크기 조정 */
-    font-weight: 700;
-    line-height: 1.5; /* 줄 높이 표준화 */
-    text-align: center;
-    border: none;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    cursor: pointer;
-    z-index: 999;
-    transition: all 0.2s ease-in-out;
-}
-.fab:hover {
-    transform: scale(1.05);
-    filter: brightness(1.1);
-}
+/* [✅ 수정] 기존 .fab 스타일 삭제 */
 
 /* 모달 내부 폼 스타일 */
 #new-request-form .modal-body h4 {
@@ -487,4 +462,45 @@
 /* 필터 버튼 그룹 간격 조절 */
 .filter-group .filter-spacer {
     margin-left: 20px; /* 버튼 왼쪽에 간격을 줍니다 */
+}
+
+/* [✅ 추가] '화물 등록' 카드 스타일 */
+.add-request-card {
+    border: 2px dashed #ced4da;
+    background-color: #f8f9fa;
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.add-request-card:hover {
+    border-color: var(--danger-color);
+    background-color: #fff7f5;
+}
+
+.add-request-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: #868e96;
+    transition: color 0.2s;
+}
+
+.add-request-card:hover .add-request-content {
+    color: var(--danger-color);
+}
+
+.add-request-content .plus-icon {
+    font-size: 48px;
+    font-weight: 300;
+    line-height: 1;
+}
+
+.add-request-content .add-text {
+    font-size: 16px;
+    font-weight: 700;
 }

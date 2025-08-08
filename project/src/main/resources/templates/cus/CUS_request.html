@@ -107,6 +107,12 @@
                             <div class="offer-details-container"></div>
                         </div>
 
+                        <div class="card add-request-card" id="open-request-modal">
+                            <div class="add-request-content">
+                                <span class="plus-icon">+</span>
+                                <span class="add-text">화물 등록</span>
+                            </div>
+                        </div>
                     </div>
 					<div class="pagination-container" th:if="${!requestPage.empty}">
 					    <nav th:with="page=${requestPage},
@@ -157,8 +163,6 @@
     </table>
 </template>
 
-<button id="open-request-modal" class="fab">+화물등록</button>
-
 <div id="request-modal" class="modal-wrapper">
     <div class="modal-content">
         <div class="modal-header">
@@ -172,35 +176,34 @@
                     <input type="text" id="itemName" class="form-input" placeholder="품명 (예: 자동차 부품)" required>
                     <select id="incoterms" class="form-input"><option value="FOB">FOB</option><option value="CIF">CIF</option></select>
                     <input type="number" id="totalCbm" class="form-input" placeholder="총 CBM (예: 15.5)" step="0.01" required>
-                    <label style="display:flex; align-items:center; gap: 8px;"><input type="checkbox" id="isDangerous"> 위험물 포함</label>
                 </div>
                 <h4>운송 정보</h4>
                 <div class="form-grid">
-					<select id="departurePort" class="form-input" required>
+                    <select id="departurePort" class="form-input" required>
 					    <option value="" disabled selected>출발항 선택</option>
-					    <option value="도쿄">도쿄</option>
+					    <option value="인천">인천</option>
 					    <option value="부산">부산</option>
+					    <option value="도쿄">도쿄</option>
+					    <option value="오사카">오사카</option>
 					    <option value="상해">상해</option>
 					    <option value="싱가포르">싱가포르</option>
-					    <option value="인천">인천</option>
-					    <option value="오사카">오사카</option>
 					</select>
-					<select id="arrivalPort" class="form-input" required>
+                    <select id="arrivalPort" class="form-input" required>
 					    <option value="" disabled selected>도착항 선택</option>
-					    <option value="도쿄">도쿄</option>
+					    <option value="인천">인천</option>
 					    <option value="부산">부산</option>
+					    <option value="도쿄">도쿄</option>
+					    <option value="오사카">오사카</option>
 					    <option value="상해">상해</option>
 					    <option value="싱가포르">싱가포르</option>
-					    <option value="인천">인천</option>
-					    <option value="오사카">오사카</option>
 					</select>
                     <div class="form-row" style="grid-column: 1 / -1;">
                         <label for="desiredArrivalDate" style="font-size:14px; margin-bottom: 4px; display:block;">희망 도착일</label>
                         <input type="date" id="desiredArrivalDate" class="form-input">
                     </div>
                     <div class="form-row" style="grid-column: 1 / -1;">
-                        <label for="desiredArrivalDate" style="font-size:14px; margin-bottom: 4px; display:block;">요청 마감일</label>
-                        <input type="datetime-local" id="deadline" class="form-input">
+                        <label for="deadline" style="font-size:14px; margin-bottom: 4px; display:block;">요청 마감일</label>
+                        <input type="datetime-local" id="deadline" class="form-input" required>
                     </div>
                     <select id="tradeType" class="form-input"><option value="수출">수출</option><option value="수입">수입</option></select>
                     <select id="transportType" class="form-input"><option value="해상">해상</option><option value="항공">항공</option></select>

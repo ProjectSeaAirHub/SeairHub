@@ -110,7 +110,10 @@ public class OfferService {
                         cb.lessThanOrEqualTo(root.get("request").get("deadline"), now)
                     );
                     predicates.add(cb.or(rejectedStatus, expiredPending));
-                } else {
+                }else if ("CONFIRMED".equalsIgnoreCase(status)) {
+                    // [✅ 수정] '확정' 탭: CONFIRMED 또는 COMPLETED 상태인 건
+                    predicates.add(root.get("status").in(OfferStatus.CONFIRMED, OfferStatus.COMPLETED));
+                }else {
                     // 그 외 (수락, 재판매중)
                     try {
                         predicates.add(cb.equal(root.get("status"), OfferStatus.valueOf(status.toUpperCase())));

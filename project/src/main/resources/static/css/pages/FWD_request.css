@@ -423,11 +423,10 @@
     cursor: not-allowed;
 }
 
-/* FWD_request.css 파일 맨 아래에 추가 */
-
+/* [✅ 수정] is-closed, status-badge 스타일 추가 및 수정 */
 .request-card.is-closed {
-    background-color: #f8f9fa; /* 배경을 약간 회색으로 */
-    opacity: 0.8; /* 살짝 투명하게 */
+    background-color: #f8f9fa;
+    opacity: 0.8;
 }
 
 .request-card.is-closed:hover {
@@ -436,9 +435,15 @@
 }
 
 .status-badge.closed {
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-align: center;
+    min-width: 65px;
     background-color: #e2e3e5;
-    color: #495057;
-    border: 1px solid #ced4da;
+    color: #383d41;
+    border: 1px solid #d6d8db;
 }
 
 /* FWD_request.css 파일 맨 아래에 추가 */

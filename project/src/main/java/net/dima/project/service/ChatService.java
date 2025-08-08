@@ -16,6 +16,8 @@ import java.util.stream.Collectors;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +28,7 @@ public class ChatService {
     private final ContainerCargoRepository containerCargoRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
+    private final SseEmitterService sseEmitterService; // [✅ 추가]
 
     public void createChatRoomForOffer(OfferEntity offer) {
         if (chatRoomRepository.findByOffer(offer).isPresent()) {
@@ -49,10 +52,6 @@ public class ChatService {
         chatRoomRepository.save(chatRoom);
     }
 
-    /**
-     * 컨테이너가 정산완료(SETTLED)될 때, 관련된 모든 채팅방을 종료(CLOSED)시키는 메서드
-     * [오류 수정 완료] ContainerCargoRepository를 주입받아 올바르게 조회하도록 수정
-     */
     public void closeChatRoomsForSettledContainer(ContainerEntity container) {
         containerCargoRepository.findAllByContainer(container).stream()
             .filter(cargo -> !cargo.getIsExternal() && cargo.getOffer() != null)
@@ -69,26 +68,15 @@ public class ChatService {
         });
     }
     
-    /**
-     * 현재 로그인한 사용자가 참여하고 있는 모든 채팅방 목록을 조회합니다.
-     */
-    /**
-     * [이 메서드를 아래 코드로 교체해주세요]
-     * 현재 로그인한 사용자가 참여하고 있는 '활성(ACTIVE)' 상태의 모든 채팅방 목록을 조회합니다.
-     */
     @Transactional(readOnly = true)
     public List<ChatRoomDto> getChatRoomsForUser(Integer userSeq) {
         return chatRoomRepository.findAllByUserSeq(userSeq).stream()
-                // ⭐ 핵심 수정: 채팅방의 상태가 ACTIVE인 것만 필터링하는 로직 추가
                 .filter(chatRoom -> chatRoom.getStatus() == ChatRoomStatus.ACTIVE)
                 .map(chatRoom -> toChatRoomDto(chatRoom, userSeq))
                 .sorted(Comparator.comparing(ChatRoomDto::getLastMessageTime, Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 특정 채팅방의 모든 메시지 기록을 조회합니다.
-     */
     @Transactional(readOnly = true)
     public List<ChatMessageDto> getMessagesForChatRoom(Long chatRoomId) {
         return chatMessageRepository.findByChatRoom_ChatRoomIdOrderBySentAtAsc(chatRoomId).stream()
@@ -96,14 +84,8 @@ public class ChatService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 클라이언트로부터 받은 새 메시지를 DB에 저장합니다.
-     */
-    /**
-     * [이 메서드를 아래 코드로 교체해주세요]
-     */
+    // [✅ 수정] 메시지 저장 시 SSE 이벤트 발생 로직 추가
     public ChatMessage saveMessage(ChatMessageDto dto) {
-        // [수정] UserRepository.findById() -> userRepository.findById()
         UserEntity sender = userRepository.findById(dto.getSenderSeq())
                 .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다."));
         ChatRoom chatRoom = chatRoomRepository.findById(dto.getChatRoomId())
@@ -114,20 +96,49 @@ public class ChatService {
                 .sender(sender)
                 .messageContent(dto.getMessageContent())
                 .build();
-        return chatMessageRepository.save(chatMessage);
+        
+        ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
+
+        // 트랜잭션 커밋 후 SSE 이벤트 전송
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                chatRoom.getParticipants().stream()
+                    .filter(p -> !p.getUser().getUserSeq().equals(sender.getUserSeq()))
+                    .findFirst()
+                    .ifPresent(receiverParticipant -> {
+                        String receiverUserId = receiverParticipant.getUser().getUserId();
+                        sseEmitterService.sendToClient(receiverUserId, "unreadChat", "new message");
+                    });
+            }
+        });
+        
+        return savedMessage;
     }
-    /**
-     * ChatRoom Entity를 ChatRoomDto로 변환하는 헬퍼 메서드
-     */
+
+    // [✅ 추가] 메시지 읽음 처리 메서드
+    public void markMessagesAsRead(Long roomId, Integer userSeq) {
+        chatMessageRepository.markAsReadByRoomIdAndUserSeq(roomId, userSeq);
+
+        // 트랜잭션 커밋 후 SSE 이벤트 전송
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                UserEntity user = userRepository.findById(userSeq).orElse(null);
+                if (user != null) {
+                    sseEmitterService.sendToClient(user.getUserId(), "unreadChat", "marked as read");
+                }
+            }
+        });
+    }
+
     private ChatRoomDto toChatRoomDto(ChatRoom chatRoom, Integer currentUserSeq) {
-        // 상대방 찾기
         UserEntity otherUser = chatRoom.getParticipants().stream()
                 .map(ChatParticipant::getUser)
                 .filter(user -> !user.getUserSeq().equals(currentUserSeq))
                 .findFirst()
                 .orElse(null);
 
-        // 채팅방 참여 정보에서 '나'의 정보 찾기
         ChatParticipant myParticipantInfo = chatRoom.getParticipants().stream()
                 .filter(p -> p.getUser().getUserSeq().equals(currentUserSeq))
                 .findFirst()
@@ -137,7 +148,6 @@ public class ChatService {
         String customName = myParticipantInfo.getCustomRoomName();
 
         String roomName;
-        // ⭐ 핵심: 커스텀 이름이 있으면 그것을 사용하고, 없으면 자동으로 생성
         if (customName != null && !customName.isBlank()) {
             roomName = customName;
         } else {
@@ -147,33 +157,16 @@ public class ChatService {
                     chatRoom.getOffer().getRequest().getCargo().getItemName());
         }
 
-//        // 채팅방 내 나의 역할 찾기
-//        String myRole = chatRoom.getParticipants().stream()
-//                .filter(p -> p.getUser().getUserSeq().equals(currentUserSeq))
-//                .findFirst()
-//                .map(ChatParticipant::getRoleInChat)
-//                .orElse("");
-//
-//        // UX 시나리오에 맞는 채팅방 이름 생성
-//        String rolePrefix = "REQUESTER".equals(myRole) ? "[운송사]" : "[화주]";
-//        String roomName = String.format("%s %s '%s'", rolePrefix,
-//                otherUser != null ? otherUser.getCompanyName() : "알 수 없음",
-//                chatRoom.getOffer().getRequest().getCargo().getItemName());
-
-        // 마지막 메시지 정보 (추후 구현)
-        // List<ChatMessage> messages = chatRoom.getMessages();
-        // ChatMessage lastMessage = messages.isEmpty() ? null : messages.get(messages.size() - 1);
+        // [✅ 추가] 안 읽은 메시지 수 계산
+        long unreadCount = chatMessageRepository.countUnreadMessages(chatRoom.getChatRoomId(), currentUserSeq);
 
         return ChatRoomDto.builder()
                 .chatRoomId(chatRoom.getChatRoomId())
                 .roomName(roomName)
-                // .lastMessage(lastMessage != null ? lastMessage.getMessageContent() : "대화를 시작해보세요.")
-                // .lastMessageTime(lastMessage != null ? lastMessage.getSentAt().format(DateTimeFormatter.ofPattern("MM/dd HH:mm")) : null)
-                // .unreadCount(0) // TODO: 안 읽은 메시지 수 계산 로직
+                .unreadCount((int) unreadCount)
                 .build();
     }
     
- // ChatService.java
     public void updateChatRoomName(Integer userSeq, Long chatRoomId, String newName) {
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다."));
@@ -184,6 +177,5 @@ public class ChatService {
                 .orElseThrow(() -> new SecurityException("해당 채팅방에 참여하고 있지 않습니다."));
         
         participant.setCustomRoomName(newName);
-        // @Transactional 어노테이션 덕분에 메서드가 끝나면 변경사항이 자동으로 DB에 저장됩니다.
     }
 }

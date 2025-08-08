@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping; 
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -51,6 +52,15 @@ public class ChatApiController {
         }
         
         chatService.updateChatRoomName(userDetails.getUserSeq(), roomId, newName.trim());
+        return ResponseEntity.ok().build();
+    }
+    
+    // [✅ 추가] 메시지 읽음 처리 API
+    @PostMapping("/rooms/{roomId}/read")
+    public ResponseEntity<Void> markMessagesAsRead(
+            @PathVariable("roomId") Long roomId,
+            @AuthenticationPrincipal LoginUserDetails userDetails) {
+        chatService.markMessagesAsRead(roomId, userDetails.getUserSeq());
         return ResponseEntity.ok().build();
     }
 }

@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const container = document.querySelector('.container');
+    const container = document.querySelector('body'); 
     const currentUserSeq = container.dataset.userSeq;
     const currentUserName = container.dataset.userName;
 
@@ -14,82 +14,134 @@ document.addEventListener('DOMContentLoaded', () => {
     const messageListContainer = document.getElementById('message-list-container');
     const messageInput = document.getElementById('chat-message-input');
     const sendMessageBtn = document.getElementById('send-message-btn');
+    const addGroupBtn = document.getElementById('add-group-btn');
 
-    // 1. 채팅방 목록을 서버에서 불러와 렌더링하는 함수
-    async function loadChatRooms() {
+    const inputModal = document.getElementById('input-modal');
+    const inputModalTitle = document.getElementById('input-modal-title');
+    const inputModalField = document.getElementById('input-modal-field');
+    const inputModalConfirm = document.getElementById('input-modal-confirm');
+    const inputModalCancel = document.getElementById('input-modal-cancel');
+    const inputModalClose = document.getElementById('input-modal-close');
+
+    const CHAT_GROUPS_KEY = `chatGroups_${currentUserSeq}`;
+
+    async function loadChatRoomsAndGroups() {
         try {
             const response = await fetch('/api/chat/rooms');
             if (!response.ok) throw new Error('채팅방 목록을 불러오는데 실패했습니다.');
             const chatRooms = await response.json();
             
             chatListContainer.innerHTML = '';
-            if (chatRooms.length === 0) {
-                chatListContainer.innerHTML = '<p style="text-align:center; padding: 20px; color: #868e96;">진행중인 채팅이 없습니다.</p>';
-                return;
-            }
+            
+            let groups = JSON.parse(localStorage.getItem(CHAT_GROUPS_KEY)) || {};
+            
+            Object.keys(groups).forEach(groupId => {
+                createGroupElement(groupId, groups[groupId].name);
+            });
+
+            createGroupElement('unassigned', '미분류');
 
             chatRooms.forEach(room => {
-                const roomItem = document.createElement('div');
-                roomItem.className = 'chat-room-item';
-                roomItem.dataset.roomId = room.chatRoomId;
-                roomItem.innerHTML = `
-                    <div class="room-name">${room.roomName}</div>
-                    <div class="last-message">${room.lastMessage || ''}</div>
-                `;
-                chatListContainer.appendChild(roomItem);
+                const roomElement = createChatRoomElement(room);
+                const groupId = findGroupIdForRoom(room.chatRoomId, groups) || 'unassigned';
+                const groupContent = chatListContainer.querySelector(`.chat-group[data-group-id='${groupId}'] .chat-group-content`);
+                if (groupContent) {
+                    groupContent.appendChild(roomElement);
+                }
             });
+
         } catch (error) {
             console.error(error);
             chatListContainer.innerHTML = `<p style="text-align:center; padding: 20px; color: red;">${error.message}</p>`;
         }
     }
 
-    // 2. 특정 채팅방 선택 시 메시지 불러오기 및 UI 변경
+    // [✅ 추가] 외부(부모 창)에서 이 함수를 호출할 수 있도록 window 객체에 할당
+    window.refreshChatList = loadChatRoomsAndGroups;
+
+    function createGroupElement(id, name) {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'chat-group';
+        groupDiv.dataset.groupId = id;
+        groupDiv.innerHTML = `
+            <div class="chat-group-header">
+                <span>${name}</span>
+                ${id !== 'unassigned' ? '<span class="delete-group-btn">×</span>' : ''}
+            </div>
+            <div class="chat-group-content"></div>
+        `;
+        chatListContainer.appendChild(groupDiv);
+    }
+    
+    function createChatRoomElement(room) {
+        const roomItem = document.createElement('div');
+        roomItem.className = 'chat-room-item';
+        roomItem.dataset.roomId = room.chatRoomId;
+        roomItem.draggable = true;
+        roomItem.innerHTML = `
+            <div class="room-name">${room.roomName}</div>
+            <div class="last-message">${room.lastMessage || ''}</div>
+            <span class="unread-count">${room.unreadCount}</span>
+        `;
+        const unreadBadge = roomItem.querySelector('.unread-count');
+        if (room.unreadCount > 0) {
+            unreadBadge.style.display = 'flex';
+        }
+        return roomItem;
+    }
+
+    function findGroupIdForRoom(roomId, groups) {
+        for (const groupId in groups) {
+            if (groups[groupId].rooms.includes(roomId.toString())) {
+                return groupId;
+            }
+        }
+        return null;
+    }
+
     async function selectChatRoom(roomId) {
         if (selectedChatRoomId === roomId) return;
 
-        // 기존 구독 해지
+        try {
+            await fetch(`/api/chat/rooms/${roomId}/read`, { method: 'POST' });
+            const badge = document.querySelector(`.chat-room-item[data-room-id='${roomId}'] .unread-count`);
+            if (badge) {
+                badge.textContent = '0';
+                badge.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('메시지 읽음 처리 실패:', error);
+        }
+
         if (selectedChatRoomId && subscriptions.has(selectedChatRoomId)) {
             subscriptions.get(selectedChatRoomId).unsubscribe();
             subscriptions.delete(selectedChatRoomId);
         }
-
         selectedChatRoomId = roomId;
-
-        // UI 업데이트
         document.querySelectorAll('.chat-room-item.active').forEach(item => item.classList.remove('active'));
         document.querySelector(`.chat-room-item[data-room-id='${roomId}']`).classList.add('active');
-        
         const roomName = document.querySelector(`.chat-room-item[data-room-id='${roomId}'] .room-name`).textContent;
         chatRoomTitle.textContent = roomName;
-        
         noChatSelectedView.style.display = 'none';
         chatRoomView.style.display = 'flex';
         messageInput.disabled = false;
         sendMessageBtn.disabled = false;
         messageListContainer.innerHTML = '';
-
-        // 메시지 이력 불러오기
         const response = await fetch(`/api/chat/rooms/${roomId}/messages`);
         const messages = await response.json();
         messages.forEach(showMessage);
-
-        // 새로운 채팅방 구독
         const subscription = stompClient.subscribe('/topic/chatroom/' + roomId, (message) => {
             showMessage(JSON.parse(message.body));
         });
         subscriptions.set(roomId, subscription);
     }
-
-    // 3. 메시지를 화면에 표시하는 함수
+    
     function showMessage(message) {
         const messageItem = document.createElement('div');
         messageItem.classList.add('message-item');
-        
         const messageBubble = document.createElement('div');
         messageBubble.classList.add('message-bubble');
         messageBubble.textContent = message.messageContent;
-
         if (message.senderSeq == currentUserSeq) {
             messageItem.classList.add('my-message');
         } else {
@@ -99,13 +151,11 @@ document.addEventListener('DOMContentLoaded', () => {
             senderName.textContent = message.senderName;
             messageItem.appendChild(senderName);
         }
-
         messageItem.appendChild(messageBubble);
         messageListContainer.appendChild(messageItem);
         messageListContainer.scrollTop = messageListContainer.scrollHeight;
     }
 
-    // 4. 메시지 전송 함수
     function sendMessage() {
         const messageContent = messageInput.value.trim();
         if (messageContent && stompClient && selectedChatRoomId) {
@@ -120,17 +170,94 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 5. WebSocket 연결 설정
     function connect() {
         const socket = new SockJS('/ws-chat');
         stompClient = Stomp.over(socket);
         stompClient.connect({}, (frame) => {
             console.log('Connected: ' + frame);
-            loadChatRooms(); // 연결 성공 후 채팅방 목록 로드
+            loadChatRoomsAndGroups(); 
+            // [✅ 수정] 이 파일 내의 중복 SSE 연결 로직 삭제
         });
     }
 
-    // --- 이벤트 리스너 ---
+    let onConfirmCallback = null;
+    const openInputModal = (title, value, placeholder, onConfirm) => {
+        inputModalTitle.textContent = title;
+        inputModalField.value = value;
+        inputModalField.placeholder = placeholder;
+        inputModal.style.display = 'flex';
+        inputModalField.focus();
+        onConfirmCallback = onConfirm;
+    };
+    const closeInputModal = () => {
+        inputModal.style.display = 'none';
+        inputModalField.value = '';
+        onConfirmCallback = null;
+    };
+    
+    inputModalConfirm.addEventListener('click', () => {
+        if (onConfirmCallback) {
+            onConfirmCallback(inputModalField.value);
+        }
+    });
+    inputModalField.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            inputModalConfirm.click();
+        }
+    });
+    inputModalCancel.addEventListener('click', closeInputModal);
+    inputModalClose.addEventListener('click', closeInputModal);
+
+    let draggedItem = null;
+    chatListContainer.addEventListener('dragstart', (e) => {
+        if (e.target.classList.contains('chat-room-item')) {
+            draggedItem = e.target;
+            setTimeout(() => e.target.style.display = 'none', 0);
+        }
+    });
+    chatListContainer.addEventListener('dragend', (e) => {
+        if (draggedItem) {
+            setTimeout(() => {
+                draggedItem.style.display = '';
+                draggedItem = null;
+            }, 0);
+        }
+    });
+    chatListContainer.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const groupContent = e.target.closest('.chat-group-content');
+        if (groupContent) {
+            groupContent.classList.add('drag-over');
+        }
+    });
+    chatListContainer.addEventListener('dragleave', (e) => {
+        const groupContent = e.target.closest('.chat-group-content');
+        if (groupContent) {
+            groupContent.classList.remove('drag-over');
+        }
+    });
+    chatListContainer.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const groupContent = e.target.closest('.chat-group-content');
+        if (groupContent && draggedItem) {
+            groupContent.appendChild(draggedItem);
+            groupContent.classList.remove('drag-over');
+            const roomId = draggedItem.dataset.roomId;
+            const newGroupId = groupContent.parentElement.dataset.groupId;
+            let groups = JSON.parse(localStorage.getItem(CHAT_GROUPS_KEY)) || {};
+            Object.keys(groups).forEach(gId => {
+                groups[gId].rooms = groups[gId].rooms.filter(rId => rId !== roomId);
+            });
+            if (newGroupId !== 'unassigned') {
+                if (!groups[newGroupId]) {
+                    groups[newGroupId] = { name: 'Unknown', rooms: [] };
+                }
+                groups[newGroupId].rooms.push(roomId);
+            }
+            localStorage.setItem(CHAT_GROUPS_KEY, JSON.stringify(groups));
+        }
+    });
+
     sendMessageBtn.addEventListener('click', sendMessage);
     messageInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendMessage();
@@ -141,22 +268,48 @@ document.addEventListener('DOMContentLoaded', () => {
         if (roomItem) {
             selectChatRoom(roomItem.dataset.roomId);
         }
+        
+        if (e.target.classList.contains('delete-group-btn')) {
+            const group = e.target.closest('.chat-group');
+            const groupId = group.dataset.groupId;
+            const groupName = group.querySelector('.chat-group-header span').textContent;
+            if (confirm(`'${groupName}' 그룹을 삭제하시겠습니까?\n(내부의 채팅방은 '미분류'로 이동됩니다.)`)) {
+                let groups = JSON.parse(localStorage.getItem(CHAT_GROUPS_KEY)) || {};
+                const unassignedGroup = chatListContainer.querySelector('.chat-group[data-group-id="unassigned"] .chat-group-content');
+                Array.from(group.querySelectorAll('.chat-room-item')).forEach(roomEl => {
+                    unassignedGroup.appendChild(roomEl);
+                });
+                delete groups[groupId];
+                localStorage.setItem(CHAT_GROUPS_KEY, JSON.stringify(groups));
+                group.remove();
+            }
+        }
+    });
+	
+	addGroupBtn.addEventListener('click', () => {
+        openInputModal('새 그룹 추가', '', '그룹 이름을 입력하세요', (name) => {
+            if (name && name.trim()) {
+                let groups = JSON.parse(localStorage.getItem(CHAT_GROUPS_KEY)) || {};
+                const newGroupId = `group_${Date.now()}`;
+                groups[newGroupId] = { name: name.trim(), rooms: [] };
+                localStorage.setItem(CHAT_GROUPS_KEY, JSON.stringify(groups));
+                createGroupElement(newGroupId, name.trim());
+                closeInputModal();
+            }
+        });
     });
 
-	
-	// --- 이벤트 리스너 --- 섹션에 아래 이벤트 리스너를 추가합니다.
 	chatRoomTitle.addEventListener('click', () => {
-	    if (!selectedChatRoomId) return; // 채팅방이 선택되지 않았으면 무시
-
+	    if (!selectedChatRoomId) return; 
 	    const currentName = chatRoomTitle.textContent;
-	    const newName = prompt("새로운 채팅방 이름을 입력하세요:", currentName);
-
-	    if (newName && newName.trim() !== '' && newName !== currentName) {
-	        updateChatRoomName(selectedChatRoomId, newName.trim());
-	    }
+        openInputModal('채팅방 이름 변경', currentName, '', (newName) => {
+            if (newName && newName.trim() !== '' && newName !== currentName) {
+	            updateChatRoomName(selectedChatRoomId, newName.trim());
+	        }
+            closeInputModal();
+        });
 	});
 	
-	// chat.js 파일의 맨 아래에 아래 함수를 새로 추가합니다.
 	async function updateChatRoomName(roomId, name) {
 	    try {
 	        const response = await fetch(`/api/chat/rooms/${roomId}/name`, {
@@ -164,22 +317,16 @@ document.addEventListener('DOMContentLoaded', () => {
 	            headers: { 'Content-Type': 'application/json' },
 	            body: JSON.stringify({ name: name })
 	        });
-
 	        if (!response.ok) {
 	            throw new Error('이름 변경에 실패했습니다.');
 	        }
-
-	        // 화면에 즉시 반영
 	        chatRoomTitle.textContent = name;
 	        document.querySelector(`.chat-room-item[data-room-id='${roomId}'] .room-name`).textContent = name;
-	        alert('채팅방 이름이 변경되었습니다.');
 	    } catch (error) {
 	        console.error(error);
 	        alert(error.message);
 	    }
 	}
 	
-	
-    // --- 초기화 ---
     connect();
 });

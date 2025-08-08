@@ -350,30 +350,7 @@
     border: 1px solid #d6d8db;
 }
 
-/* ======== 플로팅 컨테이너 추가 버튼 스타일 ======== */
-.floating-add-btn {
-    /* 화면 기준으로 위치 고정 */
-    position: fixed;
-
-    /* 오른쪽 아래 모서리에 배치 */
-    right: 40px;
-    bottom: 40px;
-
-    /* 다른 요소들보다 항상 위에 보이도록 설정 */
-    z-index: 1000;
-
-    /* (선택사항) 입체감을 위한 그림자 효과 */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-
-    /* (선택사항) 부드러운 전환 효과 */
-    transition: all 0.2s ease-in-out;
-}
-
-/* (선택사항) 마우스 올렸을 때 살짝 위로 이동하며 커지는 효과 */
-.floating-add-btn:hover {
-    transform: translateY(-5px) scale(1.03);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
-}
+/* [✅ 수정] 기존 플로팅 버튼 스타일 삭제 */
 
 /* ============================================== */
 /* '컨테이너 추가' 버튼 전용 주황색 스타일 */
@@ -509,4 +486,45 @@
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--dark-color);
+}
+
+/* [✅ 추가] 새로운 '컨테이너 추가' 카드 스타일 */
+.add-container-card {
+    border: 2px dashed #ced4da;
+    background-color: #f8f9fa;
+    min-height: 150px; /* 카드의 최소 높이 지정 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.add-container-card:hover {
+    border-color: #007bff;
+    background-color: #f1f3f5;
+}
+
+.add-container-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: #868e96;
+    transition: color 0.2s;
+}
+
+.add-container-card:hover .add-container-content {
+    color: #007bff;
+}
+
+.add-container-content .plus-icon {
+    font-size: 48px;
+    font-weight: 300;
+    line-height: 1;
+}
+
+.add-container-content .add-text {
+    font-size: 16px;
+    font-weight: 700;
 }

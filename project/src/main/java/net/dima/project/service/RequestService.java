@@ -186,7 +186,7 @@ public class RequestService {
                 .itemName(dto.getItemName())
                 .incoterms(dto.getIncoterms())
                 .totalCbm(dto.getTotalCbm())
-                .isDangerous(dto.getIsDangerous())
+                .isDangerous(false)
                 .build();
         cargoRepository.save(newCargo);
 

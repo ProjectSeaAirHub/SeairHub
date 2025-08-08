@@ -35,6 +35,42 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) location.reload();
         } catch (error) { alert('컨테이너 등록 중 오류가 발생했습니다.'); }
     });
+    
+    // --- [✅ 추가] 신규 컨테이너 등록 모달의 항구 선택 로직 ---
+    const departurePortSelect = document.getElementById('departure-port');
+    const arrivalPortSelect = document.getElementById('arrival-port');
+
+    const portGroups = {
+        '인천': 'KR', '부산': 'KR',
+        '도쿄': 'JP', '오사카': 'JP',
+        '상해': 'CN',
+        '싱가포르': 'SG'
+    };
+
+    function updatePortOptions() {
+        const selectedDeparture = departurePortSelect.value;
+        const selectedArrival = arrivalPortSelect.value;
+        const departureGroup = selectedDeparture ? portGroups[selectedDeparture] : null;
+        const arrivalGroup = selectedArrival ? portGroups[selectedArrival] : null;
+
+        // 도착항 옵션 업데이트
+        for (const option of arrivalPortSelect.options) {
+            if (option.value) {
+                const optionGroup = portGroups[option.value];
+                option.disabled = (departureGroup && optionGroup === departureGroup);
+            }
+        }
+        // 출발항 옵션 업데이트
+        for (const option of departurePortSelect.options) {
+            if (option.value) {
+                const optionGroup = portGroups[option.value];
+                option.disabled = (arrivalGroup && optionGroup === arrivalGroup);
+            }
+        }
+    }
+    departurePortSelect.addEventListener('change', updatePortOptions);
+    arrivalPortSelect.addEventListener('change', updatePortOptions);
+
 
     // --- 3. 서류 등록 모달 로직 ---
     const registerForm = document.getElementById('register-doc-form');

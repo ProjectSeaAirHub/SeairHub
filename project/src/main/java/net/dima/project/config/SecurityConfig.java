@@ -95,6 +95,7 @@ public class SecurityConfig {
         // ⭐ [핵심] 이 부분을 http.csrf(...) 설정 위에 추가해주세요.
         // Vesselfinder의 지도가 iframe으로 삽입될 수 있도록 Content-Security-Policy 헤더를 설정합니다.
         http.headers(headers -> headers
+        	.frameOptions(frameOptions -> frameOptions.sameOrigin())
             .contentSecurityPolicy(csp -> csp
                 .policyDirectives("frame-src 'self' https://www.vesselfinder.com")
             )

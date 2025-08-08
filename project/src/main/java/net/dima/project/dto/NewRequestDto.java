@@ -11,7 +11,6 @@ public class NewRequestDto {
     private String itemName;
     private String incoterms;
     private Double totalCbm;
-    private Boolean isDangerous;
 
     // 요청 정보
     private String departurePort;
