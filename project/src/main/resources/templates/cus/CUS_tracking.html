@@ -37,26 +37,35 @@
                         <div th:if="${requestPage.empty}" class="no-results-message">운송중인 화물이 없습니다.</div>
 
                         <div class="request-item-container" th:each="req : ${requestPage.content}">
-                            <article class="card request-card" th:attr="data-request-id=${req.requestId}">
-                                <th:block th:if="${req.status == 'CLOSED'}">
-                                    <div class="card-body-centered">
-                                        <div class="info-group-left">
-                                            <h3 class="item-name" th:text="${req.itemName}"></h3>
-                                            <p class="cbm" th:text="${#numbers.formatDecimal(req.cbm, 2, 'COMMA', 2, 'POINT')} + ' CBM'"></p>
-                                        </div>
-                                        <div class="progress-tracker-large">
-                                            <div class="step" th:classappend="${#lists.contains({'ACCEPTED','CONFIRMED','SHIPPED','COMPLETED','RESOLD'}, req.detailedStatus)} ? 'is-complete' : ''"><div class="dot"></div><div class="label">낙찰</div></div>
-                                            <div class="step" th:classappend="${#lists.contains({'CONFIRMED','SHIPPED','COMPLETED'}, req.detailedStatus)} ? 'is-complete' : ''"><div class="dot"></div><div class="label">컨테이너 확정</div></div>
-                                            <div class="step" th:classappend="${#lists.contains({'SHIPPED','COMPLETED'}, req.detailedStatus)} ? 'is-complete' : ''"><div class="dot"></div><div class="label">선적완료</div></div>
-                                            <div class="step" th:classappend="${#lists.contains({'COMPLETED'}, req.detailedStatus)} ? 'is-complete' : ''"><div class="dot"></div><div class="label">운송완료</div></div>
-                                        </div>
-                                        <div class="winner-info">
-                                            <span class="label">담당 포워더</span>
-                                            <span class="company-name" th:text="${req.winningBidderCompanyName}"></span>
-                                        </div>
-                                    </div>
-                                </th:block>
-                            </article>
+					        <article class="card request-card" th:attr="data-request-id=${req.requestId}">
+					            <th:block th:if="${req.status == 'CLOSED'}">
+					                <div class="card-body-centered">
+					                    <div class="info-group-left">
+					                        <h3 class="item-name" th:text="${req.itemName}"></h3>
+					                        <p class="cbm" th:text="${#numbers.formatDecimal(req.cbm, 2, 'COMMA', 2, 'POINT')} + ' CBM'"></p>
+					                    </div>
+					                    <div class="progress-tracker-large">
+					                        <div class="step" th:classappend="${#lists.contains({'ACCEPTED','CONFIRMED','SHIPPED','COMPLETED','RESOLD'}, req.detailedStatus)} ? 'is-complete' : ''"><div class="dot"></div><div class="label">낙찰</div></div>
+					                        <div class="step" th:classappend="${#lists.contains({'CONFIRMED','SHIPPED','COMPLETED'}, req.detailedStatus)} ? 'is-complete' : ''"><div class="dot"></div><div class="label">컨테이너 확정</div></div>
+					                        <div class="step" th:classappend="${#lists.contains({'SHIPPED','COMPLETED'}, req.detailedStatus)} ? 'is-complete' : ''"><div class="dot"></div><div class="label">선적완료</div></div>
+					                        <div class="step" th:classappend="${#lists.contains({'COMPLETED'}, req.detailedStatus)} ? 'is-complete' : ''"><div class="dot"></div><div class="label">운송완료</div></div>
+					                    </div>
+					                    <div class="winner-info">
+					                        <span class="label">담당 포워더</span>
+					                        <span class="company-name" th:text="${req.winningBidderCompanyName}"></span>
+					                    </div>
+					                    <div class="tracking-action">
+					                        <button class="btn btn-sm btn-outline btn-track-shipment" 
+					                                th:attr="data-imo-number=${req.imoNumber}, data-request-id=${req.requestId}"
+					                                th:disabled="${req.imoNumber == null}">
+					                            운송조회 &#9660;
+					                        </button>
+					                    </div>
+					                </div>
+					            </th:block>
+					        </article>
+					        
+					        <div class="map-container" th:id="'map-container-' + ${req.requestId}"></div>
                         </div>
                     </div>
                     <div class="pagination-container" th:if="${!requestPage.empty}">
@@ -75,5 +84,7 @@
         </section>
     </main>
 </div>
+
+<script th:src="@{/js/shipment_tracker.js}"></script>
 </body>
 </html>

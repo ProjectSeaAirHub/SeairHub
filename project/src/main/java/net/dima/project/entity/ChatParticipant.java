@@ -28,4 +28,7 @@ public class ChatParticipant {
 
     @Column(nullable = false)
     private String roleInChat; // 예: "REQUESTER", "PROVIDER"
+    
+    // [이 필드를 추가해주세요]
+    private String customRoomName;
 }

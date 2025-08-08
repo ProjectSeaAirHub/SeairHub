@@ -289,3 +289,67 @@
 .filter-group .filter-spacer {
     margin-left: 20px;
 }
+
+/* FWD_my_posted_requests.css 파일 맨 아래에 추가 */
+.tracking-action { flex-shrink: 0; }
+.map-container {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease-in-out;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    margin-top: -1px;
+}
+.map-container.is-expanded {
+    max-height: 650px; /* 지도의 최대 높이 */
+    padding: 20px;
+}
+.request-item-container.is-expanded .request-card {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+/* FWD_my_posted_requests.css 파일 맨 아래에 추가 */
+.btn-track-shipment:disabled {
+    background-color: #f8f9fa;
+    color: #ced4da;
+    border-color: #e9ecef;
+    cursor: not-allowed;
+    transform: none;
+}
+.btn-track-shipment:disabled:hover {
+    filter: none;
+}
+
+/* FWD_my_posted_requests.css 파일 맨 아래에 추가 */
+
+.tracking-action { 
+    flex-shrink: 0; 
+}
+
+/* 지도를 감싸는 컨테이너의 기본 스타일 */
+.map-container {
+    max-height: 0; /* 평소에는 높이를 0으로 만들어 숨김 */
+    overflow: hidden; /* 내용이 넘치면 잘라냄 */
+    transition: max-height 0.5s ease-in-out; /* max-height가 변할 때 0.5초 동안 부드럽게 애니메이션 */
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    margin-top: -1px; /* 위쪽 카드와 경계선을 합침 */
+}
+
+/* ⭐ 핵심: JS가 is-expanded 클래스를 추가하면, max-height를 650px로 만들어 펼침 */
+.request-item-container.is-expanded .map-container {
+    max-height: 650px;
+    padding: 20px;
+}
+
+/* 펼쳐졌을 때, 위쪽 카드의 하단 모서리를 각지게 만듦 */
+.request-item-container.is-expanded .request-card {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+

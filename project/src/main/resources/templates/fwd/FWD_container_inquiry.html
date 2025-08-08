@@ -299,6 +299,32 @@
             </div>
         </div>
     </div>
+    
+    
+    <div class="modal-wrapper" id="imo-number-modal" style="display: none;">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h3>선박 IMO 번호 입력</h3>
+            <button class="btn-close">×</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size: 14px; color: #6c757d; margin-bottom: 1rem;">
+                컨테이너를 확정하려면 운송 선박의 IMO 번호를 입력해주세요.
+            </p>
+            <form id="imo-number-form">
+                <input type="hidden" id="modal-container-id-for-imo">
+                <div class="form-row">
+                    <label for="imo-number-input">IMO Number</label>
+                    <input type="text" id="imo-number-input" class="form-input" required placeholder="예: 9813254">
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary btn-cancel">취소</button>
+            <button type="submit" form="imo-number-form" class="btn btn-primary" id="btn-confirm-with-imo">확정하기</button>
+        </div>
+    </div>
+</div>
 
     <!-- JS 파일 로드 -->
     <script th:src="@{/js/fwd_container_inquiry.js}"></script>

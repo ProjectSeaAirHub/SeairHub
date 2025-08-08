@@ -143,6 +143,43 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+	
+	// --- 이벤트 리스너 --- 섹션에 아래 이벤트 리스너를 추가합니다.
+	chatRoomTitle.addEventListener('click', () => {
+	    if (!selectedChatRoomId) return; // 채팅방이 선택되지 않았으면 무시
+
+	    const currentName = chatRoomTitle.textContent;
+	    const newName = prompt("새로운 채팅방 이름을 입력하세요:", currentName);
+
+	    if (newName && newName.trim() !== '' && newName !== currentName) {
+	        updateChatRoomName(selectedChatRoomId, newName.trim());
+	    }
+	});
+	
+	// chat.js 파일의 맨 아래에 아래 함수를 새로 추가합니다.
+	async function updateChatRoomName(roomId, name) {
+	    try {
+	        const response = await fetch(`/api/chat/rooms/${roomId}/name`, {
+	            method: 'PUT',
+	            headers: { 'Content-Type': 'application/json' },
+	            body: JSON.stringify({ name: name })
+	        });
+
+	        if (!response.ok) {
+	            throw new Error('이름 변경에 실패했습니다.');
+	        }
+
+	        // 화면에 즉시 반영
+	        chatRoomTitle.textContent = name;
+	        document.querySelector(`.chat-room-item[data-room-id='${roomId}'] .room-name`).textContent = name;
+	        alert('채팅방 이름이 변경되었습니다.');
+	    } catch (error) {
+	        console.error(error);
+	        alert(error.message);
+	    }
+	}
+	
+	
     // --- 초기화 ---
     connect();
 });

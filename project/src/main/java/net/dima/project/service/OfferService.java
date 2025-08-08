@@ -89,34 +89,64 @@ public class OfferService {
     // ▼▼▼ getMyOffers 메서드 전체를 아래 코드로 교체해주세요 ▼▼▼
     public Page<MyOfferDto> getMyOffers(String currentUserId, String status, String keyword, Pageable pageable) {
         UserEntity forwarder = userRepository.findByUserId(currentUserId);
+        LocalDateTime now = LocalDateTime.now();
 
+        // [✅ 핵심 수정] Specification을 사용하여 DB에서 직접 필터링 조건을 처리합니다.
         Specification<OfferEntity> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(cb.equal(root.get("forwarder"), forwarder));
 
-            // 1. [핵심 수정] DB 조회 시에는 상태 필터링을 하지 않도록 변경합니다.
-            //    먼저 '진행중'과 '거절' 상태를 모두 가져와야 DTO 변환 시 마감 여부를 판단할 수 있습니다.
-            List<OfferStatus> includedStatuses = List.of(
-                OfferStatus.PENDING, 
-                OfferStatus.REJECTED, 
-                OfferStatus.ACCEPTED, 
-                OfferStatus.FOR_SALE
-            );
-            predicates.add(root.get("status").in(includedStatuses));
+            // 1. 상태(status) 필터링 로직
+            if (status != null && !status.isEmpty()) {
+                if ("PENDING".equalsIgnoreCase(status)) {
+                    // '진행중' 탭: PENDING 상태이면서 마감일이 지나지 않은 건
+                    predicates.add(cb.equal(root.get("status"), OfferStatus.PENDING));
+                    predicates.add(cb.greaterThan(root.get("request").get("deadline"), now));
+                } else if ("REJECTED".equalsIgnoreCase(status)) {
+                    // '거절' 탭: REJECTED 상태이거나, PENDING 상태이지만 마감일이 지난 건
+                    Predicate rejectedStatus = cb.equal(root.get("status"), OfferStatus.REJECTED);
+                    Predicate expiredPending = cb.and(
+                        cb.equal(root.get("status"), OfferStatus.PENDING),
+                        cb.lessThanOrEqualTo(root.get("request").get("deadline"), now)
+                    );
+                    predicates.add(cb.or(rejectedStatus, expiredPending));
+                } else {
+                    // 그 외 (수락, 재판매중)
+                    try {
+                        predicates.add(cb.equal(root.get("status"), OfferStatus.valueOf(status.toUpperCase())));
+                    } catch (IllegalArgumentException e) {
+                        // 잘못된 status 값이 들어올 경우 무시
+                    }
+                }
+            } else {
+                // '전체' 탭: 정산 완료를 제외한 모든 제안
+                 List<OfferStatus> includedStatuses = List.of(
+                    OfferStatus.PENDING, 
+                    OfferStatus.REJECTED, 
+                    OfferStatus.ACCEPTED, 
+                    OfferStatus.FOR_SALE,
+                    OfferStatus.RESOLD,
+                    OfferStatus.CONFIRMED,
+                    OfferStatus.SHIPPED,
+                    OfferStatus.COMPLETED
+                );
+                predicates.add(root.get("status").in(includedStatuses));
+            }
 
-            // 키워드 검색 로직은 그대로 유지
+            // 2. 키워드 검색 로직 (기존과 동일)
             if (keyword != null && !keyword.isBlank()) {
                 Join<OfferEntity, RequestEntity> requestJoin = root.join("request");
                 Join<RequestEntity, CargoEntity> cargoJoin = requestJoin.join("cargo");
                 Predicate keywordPredicate;
                 if (keyword.matches("\\d+")) {
-                    keywordPredicate = cb.equal(requestJoin.get("requestId"), Long.parseLong(keyword));
+                    keywordPredicate = cb.like(requestJoin.get("requestId").as(String.class), "%" + keyword + "%");
                 } else {
                     keywordPredicate = cb.like(cargoJoin.get("itemName"), "%" + keyword + "%");
                 }
                 predicates.add(keywordPredicate);
             }
             
+            // N+1 문제 방지를 위한 fetch join (기존과 동일)
             if (query.getResultType() != Long.class && query.getResultType() != long.class) {
                 root.fetch("request").fetch("cargo");
                 root.fetch("container");
@@ -125,29 +155,11 @@ public class OfferService {
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 
-        List<OfferEntity> allOfferEntities = offerRepository.findAll(spec, pageable.getSort());
+        // [✅ 핵심 수정] DB에서 직접 페이징하여 필요한 만큼의 데이터만 가져옵니다.
+        Page<OfferEntity> offerPage = offerRepository.findAll(spec, pageable);
 
-        // 2. DTO로 변환합니다. (이 과정에서 마감된 '진행중'이 '거절'로 바뀝니다)
-        List<MyOfferDto> allDtos = allOfferEntities.stream()
-                .map(MyOfferDto::fromEntity)
-                .collect(Collectors.toList());
-
-        // 3. [핵심] DTO로 변환된 '최종 상태값'을 기준으로 필터링합니다.
-        List<MyOfferDto> filteredDtos;
-        if (status != null && !status.isEmpty()) {
-            filteredDtos = allDtos.stream()
-                .filter(dto -> status.equalsIgnoreCase(dto.getStatus()))
-                .collect(Collectors.toList());
-        } else {
-            filteredDtos = allDtos; // 필터가 없으면 전체 목록 사용
-        }
-
-        // 4. 필터링된 최종 목록을 가지고 수동으로 페이지네이션 객체를 만듭니다.
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), filteredDtos.size());
-        List<MyOfferDto> pageContent = (start > end) ? List.of() : filteredDtos.subList(start, end);
-        
-        return new PageImpl<>(pageContent, pageable, filteredDtos.size());
+        // [✅ 핵심 수정] DTO 변환 로직은 그대로 사용하되, Page 객체의 map 기능을 활용합니다.
+        return offerPage.map(MyOfferDto::fromEntity);
     }
     
     /**

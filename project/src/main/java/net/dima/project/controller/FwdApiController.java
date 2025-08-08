@@ -170,11 +170,12 @@ public class FwdApiController {
     @PostMapping("/my-posted-requests/{requestId}/confirm")
     public ResponseEntity<String> confirmBid(
             @PathVariable("requestId") Long requestId,
-            @RequestBody Map<String, Long> payload, 
+            @RequestBody Map<String, Long> payload,
             Authentication authentication) {
         try {
             String userId = authentication.getName();
-            Long winningOfferId = payload.get("offerId");
+            // 여기를 수정합니다.
+            Long winningOfferId = payload.get("winningOfferId");
             if (winningOfferId == null) {
                 return ResponseEntity.badRequest().body("winningOfferId가 필요합니다.");
             }
@@ -202,9 +203,10 @@ public class FwdApiController {
     
     // [✅ 추가] 컨테이너 삭제 API
     // [✅ 이 메서드를 수정합니다]
+ // [✅ 이 메서드를 수정합니다]
     @DeleteMapping("/containers/{containerId}")
     public ResponseEntity<String> deleteContainer(
-            @PathVariable("containerId") String containerId, // [✅ 수정]
+            @PathVariable("containerId") String containerId, // [✅ 수정] Long -> String
             Authentication authentication) {
         try {
             String userId = authentication.getName();
@@ -218,11 +220,13 @@ public class FwdApiController {
     // [✅ 이 메서드를 수정합니다]
     @PostMapping("/containers/{containerId}/confirm")
     public ResponseEntity<String> confirmContainer(
-            @PathVariable("containerId") String containerId, // [✅ 수정]
+            @PathVariable("containerId") String containerId,
+            @RequestBody Map<String, String> payload, // [수정] RequestBody로 imoNumber를 받습니다.
             Authentication authentication) {
         try {
             String userId = authentication.getName();
-            containerService.confirmContainer(containerId, userId);
+            String imoNumber = payload.get("imoNumber"); // payload에서 imoNumber 추출
+            containerService.confirmContainer(containerId, userId, imoNumber); // 서비스에 전달
             return ResponseEntity.ok("컨테이너가 확정 처리되었습니다. 이제 수정 및 삭제가 불가능합니다.");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

@@ -46,14 +46,14 @@ public class NaverService extends DefaultOAuth2UserService {
       // return LoginUserDetails.builder() ...
 
       // [수정 후 코드]
-      return LoginUserDetails.builder()
-          .userSeq(existingUser.getUserSeq()) // userSeq 추가
-          .userId(existingUser.getUserId())
-          .userPwd(existingUser.getUserPwd())
-          .userName(existingUser.getUserName())
-          .roles(existingUser.getRoles())
-          .attributes(response)
-          .build();
+         return LoginUserDetails.builder()
+        		    .userSeq(existingUser.getUserSeq()) // userSeq 추가
+        		    .userId(existingUser.getUserId())
+        		    .userPwd(existingUser.getUserPwd())
+        		    .userName(existingUser.getUserName())
+        		    .roles(existingUser.getRoles())
+        		    .attributes(oauth2User.getAttributes()) // 또는 response
+        		    .build();
      }
      
      // 신규 사용자인 경우

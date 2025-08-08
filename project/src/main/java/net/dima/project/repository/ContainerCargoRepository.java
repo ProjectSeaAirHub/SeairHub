@@ -43,5 +43,14 @@ public interface ContainerCargoRepository extends JpaRepository<ContainerCargoEn
     
  // [✅ ContainerCargoRepository.java에 이 메서드를 추가해주세요]
     boolean existsByOffer_OfferId(Long offerId);
+    
+ // ContainerCargoRepository.java 인터페이스 안에 아래 메소드를 추가해주세요.
+
+    @Query("SELECT cc FROM ContainerCargoEntity cc " +
+           "WHERE cc.container.containerId IN :containerIds " +
+           "AND cc.isExternal = :isExternal")
+    List<ContainerCargoEntity> findExternalCargosByContainerIds(
+            @Param("containerIds") List<String> containerIds,
+            @Param("isExternal") boolean isExternal);
 
 }

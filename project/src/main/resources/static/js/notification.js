@@ -1,3 +1,4 @@
+// [✅ notification.js 파일 전체를 이 최종 코드로 교체해주세요]
 document.addEventListener('DOMContentLoaded', () => {
     const notificationArea = document.getElementById('notification-area');
     if (!notificationArea) return;
@@ -8,106 +9,135 @@ document.addEventListener('DOMContentLoaded', () => {
     const notiBtn = notificationArea.querySelector('.notification-btn');
     const markAllReadBtn = document.getElementById('mark-all-read-btn');
 
-    let unreadCount = 0;
+    // --- 🚀 [핵심 추가] 쓰로틀링(Throttling) 함수 ---
+    let throttleTimer = null;
+    const throttle = (callback, time) => {
+        if (!throttleTimer) {
+            throttleTimer = setTimeout(() => {
+                callback();
+                throttleTimer = null;
+            }, time);
+        }
+    };
+    // --- 🚀 ---
 
-    const updateCountUI = () => {
-        countElement.textContent = unreadCount;
-        countElement.style.display = unreadCount > 0 ? 'flex' : 'none';
+    const updateCountUI = (count) => {
+        const numericCount = parseInt(count, 10);
+        countElement.textContent = numericCount;
+        countElement.style.display = numericCount > 0 ? 'flex' : 'none';
     };
 
-    const addNotificationToList = (noti, isNew) => {
+    const addNotificationToList = (noti) => {
         const noNotiMsg = listElement.querySelector('.no-notifications');
         if (noNotiMsg) noNotiMsg.remove();
+
         const li = document.createElement('li');
         li.dataset.id = noti.id;
         li.dataset.url = noti.url;
-        li.classList.add(noti.isRead ? 'read' : 'unread');
         li.innerHTML = `<div class="message">${noti.message}</div><div class="timestamp">${noti.createdAt}</div>`;
-        if (isNew) listElement.prepend(li);
-        else listElement.appendChild(li);
+        listElement.prepend(li);
     };
-    
-    const updateNotificationUI = (notifications) => {
-        unreadCount = notifications.filter(n => !n.isRead).length;
-        updateCountUI();
-        listElement.innerHTML = '';
-        if (notifications.length === 0) {
-            listElement.innerHTML = '<li class="no-notifications">새로운 알림이 없습니다.</li>';
-            return;
-        }
-        notifications.forEach(noti => addNotificationToList(noti, false));
+
+    const showNoNotificationMessage = () => {
+        listElement.innerHTML = '<li class="no-notifications">새로운 알림이 없습니다.</li>';
     };
 
     const initializeNotifications = async () => {
+        // SSE 연결이 이미 있다면 중복 실행 방지
+        if (window.sseConnected) {
+            console.log("SSE is already connected.");
+            return;
+        }
+        window.sseConnected = true;
+
         try {
             const response = await fetch('/api/notifications');
             if (!response.ok) throw new Error('알림 목록 로딩 실패');
             const notifications = await response.json();
-            updateNotificationUI(notifications);
+
+            updateCountUI(notifications.length);
+            listElement.innerHTML = '';
+            if (notifications.length === 0) {
+                showNoNotificationMessage();
+            } else {
+                notifications.forEach(addNotificationToList);
+            }
         } catch (error) {
             console.error(error);
             listElement.innerHTML = '<li class="no-notifications">알림을 불러올 수 없습니다.</li>';
         }
 
-        console.log('SSE: 연결을 시작합니다...');
         const eventSource = new EventSource('/api/notifications/subscribe');
 
-        eventSource.onopen = () => {
-            console.log('SSE: 연결이 성공적으로 열렸습니다.');
-        };
-        
-        eventSource.addEventListener('connected', (event) => {
-            console.log('SSE: 서버로부터 연결 확인 메시지 수신:', event.data);
-        });
-        
         eventSource.addEventListener('unreadCount', (event) => {
-            console.log('SSE: 읽지 않은 알림 개수 수신:', event.data);
-            unreadCount = parseInt(event.data, 10);
-            updateCountUI();
+            updateCountUI(event.data);
         });
 
         eventSource.addEventListener('notification', (event) => {
-            console.log('SSE: 새로운 알림 수신!', event.data);
             const newNoti = JSON.parse(event.data);
-            unreadCount++;
-            updateCountUI();
-            addNotificationToList(newNoti, true);
+            addNotificationToList(newNoti);
+            const currentCount = parseInt(countElement.textContent, 10) || 0;
+            updateCountUI(currentCount + 1);
         });
 
         eventSource.onerror = (error) => {
-            console.error('SSE: 오류 발생!', error);
-            // eventSource.close(); // 에러 발생 시 자동으로 재연결을 시도하므로, 닫지 않는 것이 더 안정적일 수 있습니다.
+            console.error('SSE 오류 발생:', error);
+            // 연결이 끊어지면, 다시 연결을 시도할 수 있도록 플래그를 리셋
+            window.sseConnected = false;
         };
     };
 
-    // --- 이벤트 핸들러들 (이하 동일) ---
-    notiBtn.addEventListener('click', (e) => { e.stopPropagation(); dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block'; });
+    // --- 이벤트 핸들러 ---
+    notiBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    });
+
     listElement.addEventListener('click', async (e) => {
         const li = e.target.closest('li[data-id]');
         if (!li) return;
+
         const id = li.dataset.id;
         const url = li.dataset.url;
+        
         try {
-            if (li.classList.contains('unread')) {
-                await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
-                li.classList.remove('unread');
-                li.classList.add('read');
-                unreadCount = Math.max(0, unreadCount - 1);
-                updateCountUI();
+            await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
+            li.remove(); 
+            
+            const currentCount = parseInt(countElement.textContent, 10);
+            const newCount = Math.max(0, currentCount - 1);
+            updateCountUI(newCount);
+
+            if (listElement.children.length === 0) {
+                showNoNotificationMessage();
             }
-        } catch (error) { console.error("알림 읽음 처리 실패:", error); }
-        finally { if (url && url !== 'null') window.location.href = url; }
+        } catch (error) { 
+            console.error("알림 읽음 처리 실패:", error);
+        } finally {
+            if (url && url !== 'null') {
+                window.location.href = url;
+            }
+        }
     });
+
     markAllReadBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
         try {
             await fetch('/api/notifications/read/all', { method: 'POST' });
-            unreadCount = 0;
-            updateCountUI();
-            listElement.querySelectorAll('.unread').forEach(li => { li.classList.remove('unread'); li.classList.add('read'); });
-        } catch (error) { console.error("모두 읽음 처리 실패:", error); }
+            updateCountUI(0);
+            showNoNotificationMessage();
+        } catch (error) { 
+            console.error("모두 읽음 처리 실패:", error); 
+        }
     });
-    document.addEventListener('click', (e) => { if (!notificationArea.contains(e.target)) dropdown.style.display = 'none'; });
 
-    initializeNotifications();
+    document.addEventListener('click', (e) => {
+        if (!notificationArea.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    // --- 🚀 [핵심 수정] 초기화 함수를 쓰로틀링으로 감싸서 호출 ---
+    // 2초(2000ms)에 한 번만 initializeNotifications 함수가 실행되도록 합니다.
+    throttle(initializeNotifications, 2000);
 });

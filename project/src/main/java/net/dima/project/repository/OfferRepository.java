@@ -122,4 +122,36 @@ public interface OfferRepository extends JpaRepository<OfferEntity, Long>, JpaSp
 
     // [추가] 낙찰 성공 건수 (재판매 포함)
     long countByForwarderAndStatusIn(UserEntity forwarder, List<OfferStatus> statuses);
+    
+    
+    
+    
+    /**
+     * [✅ 추가] 여러 요청(Request)에 대한 입찰(Offer) 개수를 한 번의 쿼리로 조회하여 Map으로 반환합니다.
+     * @param requests 입찰 수를 조회할 요청 엔티티 목록
+     * @return Map<Long, Long> key: requestId, value: offer count
+     */
+    @Query("SELECT o.request.requestId, COUNT(o) FROM OfferEntity o WHERE o.request IN :requests GROUP BY o.request.requestId")
+    List<Object[]> countOffersByRequestIn(@Param("requests") List<RequestEntity> requests);
+
+    
+    
+    /**
+     * [✅ 수정] 여러 요청에 대한 '낙찰된' 제안 정보를 한 번의 쿼리로 조회합니다. N+1 문제 해결의 핵심입니다.
+     * @param requests 낙찰자를 조회할 요청 엔티티 목록
+     * @return 낙찰된 제안(Offer) 목록
+     */
+    @Query("SELECT o FROM OfferEntity o JOIN FETCH o.forwarder f " +
+           "WHERE o.request IN :requests AND o.status IN ('ACCEPTED', 'CONFIRMED', 'RESOLD', 'SHIPPED', 'COMPLETED')")
+    List<OfferEntity> findWinningOffersForRequests(@Param("requests") List<RequestEntity> requests);
+    
+    /**
+     * [✅ 추가] 특정 사용자가 주어진 여러 요청(Request) 목록 중 어떤 것들에 제안했는지 ID 목록을 반환합니다.
+     * @param userId 현재 사용자의 ID
+     * @param requests 제안 여부를 확인할 요청 엔티티 목록
+     * @return Set<Long> 사용자가 제안한 요청(Request)의 ID들
+     */
+    @Query("SELECT o.request.id FROM OfferEntity o WHERE o.forwarder.userId = :userId AND o.request IN :requests")
+    Set<Long> findOfferedRequestIdsByUserIdAndRequestIn(@Param("userId") String userId, @Param("requests") List<RequestEntity> requests);
+
 }

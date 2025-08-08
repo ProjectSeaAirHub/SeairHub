@@ -16,7 +16,6 @@ import net.dima.project.service.KakaoService;
 public class SecurityConfig {
 
     private final NaverService naverService;
-    
 	private final KakaoService kakaoService;
     private final CustomOAuth2FailureHandler customOAuth2FailureHandler;
 
@@ -91,6 +90,14 @@ public class SecurityConfig {
             .logoutSuccessUrl("/")
             .invalidateHttpSession(true)
             .permitAll() // 로그아웃 URL은 모두에게 허용
+        );
+        
+        // ⭐ [핵심] 이 부분을 http.csrf(...) 설정 위에 추가해주세요.
+        // Vesselfinder의 지도가 iframe으로 삽입될 수 있도록 Content-Security-Policy 헤더를 설정합니다.
+        http.headers(headers -> headers
+            .contentSecurityPolicy(csp -> csp
+                .policyDirectives("frame-src 'self' https://www.vesselfinder.com")
+            )
         );
 
         http.csrf((auth) -> auth.disable());

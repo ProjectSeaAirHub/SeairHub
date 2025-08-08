@@ -11,25 +11,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 입찰 확정 API 호출 함수
-    async function confirmBid(requestId, offerId) {
-        if (confirm(`이 제안을 최종 확정하시겠습니까?\n다른 모든 제안은 거절 처리됩니다.`)) {
-            try {
-                const response = await fetch(`/api/fwd/my-posted-requests/${requestId}/confirm`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ offerId: offerId })
-                });
-                const message = await response.text();
-                alert(message);
-                if (response.ok) {
-                    window.location.reload();
-                }
-            } catch (error) {
-                console.error("Error confirming bid:", error);
-                alert("낙찰 처리 중 오류가 발생했습니다.");
-            }
-        }
-    }
+	// FWD_my_posted_requests.js
+	async function confirmBid(requestId, offerId) {
+	    if (confirm(`이 제안을 최종 확정하시겠습니까?\n다른 모든 제안은 거절 처리됩니다.`)) {
+	        try {
+	            const response = await fetch(`/api/fwd/my-posted-requests/${requestId}/confirm`, {
+	                method: 'POST',
+	                headers: { 'Content-Type': 'application/json' },
+	                // 여기를 수정합니다.
+	                body: JSON.stringify({ winningOfferId: offerId })
+	            });
+	            const message = await response.text();
+	            alert(message);
+	            if (response.ok) {
+	                window.location.reload();
+	            }
+	        } catch (error) {
+	            console.error("Error confirming bid:", error);
+	            alert("낙찰 처리 중 오류가 발생했습니다.");
+	        }
+	    }
+	}
 
     // 이벤트 위임을 사용하여 전체 목록의 클릭 이벤트 처리
     viewContainer.addEventListener('click', async (e) => {

@@ -323,3 +323,20 @@ body.modal-open {
     padding: 40px 20px;
     cursor: default !important;
 }
+
+/* /static/css/layout.css 파일 맨 아래에 추가 */
+
+.btn-logout-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit; /* 부모 요소의 폰트 스타일 상속 */
+    color: inherit;  /* 부모 요소의 글자색 상속 */
+    text-decoration: none; /* 밑줄 제거 */
+    cursor: pointer;
+    display: inline;
+}
+
+.btn-logout-link:hover {
+    text-decoration: underline; /* 마우스를 올리면 밑줄 표시 (선택사항) */
+}

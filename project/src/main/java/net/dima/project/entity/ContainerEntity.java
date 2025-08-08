@@ -40,6 +40,10 @@ public class ContainerEntity {
 
     @Column(name = "capacity_cbm", nullable = false)
     private Double capacityCbm;
+    
+ // ... ContainerEntity 클래스 안에 아래 필드를 추가해주세요 ...
+    @Column(name = "imo_number")
+    private String imoNumber;
 
     @Enumerated(EnumType.STRING) // [✅ 수정] Enum 타입을 DB에 문자열로 저장
     @Column(nullable = false)

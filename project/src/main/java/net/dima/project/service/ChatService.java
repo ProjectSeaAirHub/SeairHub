@@ -127,18 +127,38 @@ public class ChatService {
                 .findFirst()
                 .orElse(null);
 
-        // 채팅방 내 나의 역할 찾기
-        String myRole = chatRoom.getParticipants().stream()
+        // 채팅방 참여 정보에서 '나'의 정보 찾기
+        ChatParticipant myParticipantInfo = chatRoom.getParticipants().stream()
                 .filter(p -> p.getUser().getUserSeq().equals(currentUserSeq))
                 .findFirst()
-                .map(ChatParticipant::getRoleInChat)
-                .orElse("");
+                .orElseThrow(() -> new IllegalStateException("채팅방 참여 정보를 찾을 수 없습니다."));
 
-        // UX 시나리오에 맞는 채팅방 이름 생성
-        String rolePrefix = "REQUESTER".equals(myRole) ? "[운송사]" : "[화주]";
-        String roomName = String.format("%s %s '%s'", rolePrefix,
-                otherUser != null ? otherUser.getCompanyName() : "알 수 없음",
-                chatRoom.getOffer().getRequest().getCargo().getItemName());
+        String myRole = myParticipantInfo.getRoleInChat();
+        String customName = myParticipantInfo.getCustomRoomName();
+
+        String roomName;
+        // ⭐ 핵심: 커스텀 이름이 있으면 그것을 사용하고, 없으면 자동으로 생성
+        if (customName != null && !customName.isBlank()) {
+            roomName = customName;
+        } else {
+            String rolePrefix = "REQUESTER".equals(myRole) ? "[운송사]" : "[화주]";
+            roomName = String.format("%s %s '%s'", rolePrefix,
+                    otherUser != null ? otherUser.getCompanyName() : "알 수 없음",
+                    chatRoom.getOffer().getRequest().getCargo().getItemName());
+        }
+
+//        // 채팅방 내 나의 역할 찾기
+//        String myRole = chatRoom.getParticipants().stream()
+//                .filter(p -> p.getUser().getUserSeq().equals(currentUserSeq))
+//                .findFirst()
+//                .map(ChatParticipant::getRoleInChat)
+//                .orElse("");
+//
+//        // UX 시나리오에 맞는 채팅방 이름 생성
+//        String rolePrefix = "REQUESTER".equals(myRole) ? "[운송사]" : "[화주]";
+//        String roomName = String.format("%s %s '%s'", rolePrefix,
+//                otherUser != null ? otherUser.getCompanyName() : "알 수 없음",
+//                chatRoom.getOffer().getRequest().getCargo().getItemName());
 
         // 마지막 메시지 정보 (추후 구현)
         // List<ChatMessage> messages = chatRoom.getMessages();
@@ -151,5 +171,19 @@ public class ChatService {
                 // .lastMessageTime(lastMessage != null ? lastMessage.getSentAt().format(DateTimeFormatter.ofPattern("MM/dd HH:mm")) : null)
                 // .unreadCount(0) // TODO: 안 읽은 메시지 수 계산 로직
                 .build();
+    }
+    
+ // ChatService.java
+    public void updateChatRoomName(Integer userSeq, Long chatRoomId, String newName) {
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다."));
+
+        ChatParticipant participant = chatRoom.getParticipants().stream()
+                .filter(p -> p.getUser().getUserSeq().equals(userSeq))
+                .findFirst()
+                .orElseThrow(() -> new SecurityException("해당 채팅방에 참여하고 있지 않습니다."));
+        
+        participant.setCustomRoomName(newName);
+        // @Transactional 어노테이션 덕분에 메서드가 끝나면 변경사항이 자동으로 DB에 저장됩니다.
     }
 }

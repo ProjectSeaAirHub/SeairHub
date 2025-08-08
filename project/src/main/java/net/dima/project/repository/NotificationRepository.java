@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
     // 특정 사용자의 모든 알림을 최신순으로 조회
-    List<Notification> findByReceiverOrderByCreatedAtDesc(UserEntity receiver);
+    List<Notification> findByReceiverAndIsReadFalseOrderByCreatedAtDesc(UserEntity receiver);
 
     // 특정 사용자의 읽지 않은 알림 개수 조회
     long countByReceiverAndIsReadFalse(UserEntity receiver);

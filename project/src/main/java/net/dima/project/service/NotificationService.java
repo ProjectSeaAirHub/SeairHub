@@ -1,3 +1,4 @@
+// [✅ NotificationService.java 파일 전체를 이 최종 코드로 교체해주세요]
 package net.dima.project.service;
 
 import lombok.RequiredArgsConstructor;
@@ -23,42 +24,15 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j // [✅ @Slf4j 추가 확인]
+@Slf4j
 public class NotificationService {
 
-    private static final Long DEFAULT_TIMEOUT = 60L * 60 * 1000; // 1시간
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
-    private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
-
-    public SseEmitter subscribe(String userId) {
-        SseEmitter emitter = new SseEmitter(DEFAULT_TIMEOUT);
-        emitters.put(userId, emitter);
-        log.info("SSE: New emitter added for user: {}", userId);
-
-        emitter.onCompletion(() -> {
-            emitters.remove(userId);
-            log.info("SSE: Emitter completed for user: {}", userId);
-        });
-        emitter.onTimeout(() -> {
-            emitters.remove(userId);
-            log.info("SSE: Emitter timed out for user: {}", userId);
-        });
-        emitter.onError(e -> {
-            log.error("SSE: Emitter error for user: {}", userId, e);
-            emitters.remove(userId);
-        });
-
-        // 연결 확인 및 초기 데이터 전송
-        sendToClient(userId, "connected", "SSE connection established.");
-        long unreadCount = notificationRepository.countByReceiverAndIsReadFalse(userRepository.findByUserId(userId));
-        sendToClient(userId, "unreadCount", unreadCount);
-
-        return emitter;
-    }
+    private final SseEmitterService sseEmitterService; // SseEmitterService 주입
 
     /**
-     * [수정] 알림을 DB에 저장하는 트랜잭션과 SSE로 전송하는 네트워크 작업을 분리하여 커넥션 고갈 문제를 해결합니다.
+     * 알림을 DB에 저장하고, 트랜잭션이 성공적으로 완료된 후에만 SSE 이벤트를 전송합니다.
      */
     @Transactional
     public void sendNotification(UserEntity receiver, String message, String url) {
@@ -70,55 +44,43 @@ public class NotificationService {
                 .build();
         
         notificationRepository.save(notification);
-        log.info("SSE: Notification saved for user: {}. Message: {}", receiver.getUserId(), message);
+        log.info("DB: Notification saved for user: {}. Message: {}", receiver.getUserId(), message);
 
-        // [핵심 수정] DB 트랜잭션이 성공적으로 커밋된 '이후에' SSE 메시지를 전송하도록 스케줄링합니다.
-        // 이렇게 하면 네트워크 I/O 동안 DB 커넥션을 점유하지 않습니다.
+        // DB 트랜잭션이 성공적으로 커밋된 '이후에' SSE 메시지를 전송하도록 스케줄링합니다.
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                sendToClient(receiver.getUserId(), "notification", NotificationDto.fromEntity(notification));
+                // SseEmitterService를 통해 알림 전송
+                sseEmitterService.sendToClient(receiver.getUserId(), "notification", NotificationDto.fromEntity(notification));
+                long unreadCount = getUnreadNotificationCount(receiver.getUserId());
+                sseEmitterService.sendToClient(receiver.getUserId(), "unreadCount", String.valueOf(unreadCount));
             }
         });
     }
 
-    private void sendToClient(String userId, String eventName, Object data) {
-        SseEmitter emitter = emitters.get(userId);
-        if (emitter != null) {
-            try {
-                log.info("SSE: Sending event '{}' to user: {}. Data: {}", eventName, userId, data);
-                emitter.send(SseEmitter.event().name(eventName).data(data));
-            } catch (IOException e) {
-                log.error("SSE: Failed to send event to user {}. Removing emitter.", userId, e);
-                emitters.remove(userId);
-            }
-        } else {
-            log.warn("SSE: No emitter found for user: {}. Notification will be delivered upon next connection.", userId);
-        }
+    /**
+     * 안 읽은 알림 수를 조회하는 DB 작업 전용 메소드입니다.
+     */
+    @Transactional(readOnly = true)
+    public long getUnreadNotificationCount(String userId) {
+        UserEntity user = userRepository.findByUserId(userId);
+        return notificationRepository.countByReceiverAndIsReadFalse(user);
     }
     
-    // [✅ 아래 Heartbeat 메서드 추가]
     /**
      * 30초마다 모든 클라이언트에게 연결 유지를 위한 더미 이벤트를 보냅니다.
      */
     @Scheduled(fixedRate = 30000)
     public void sendHeartbeat() {
-        emitters.forEach((userId, emitter) -> {
-            try {
-                emitter.send(SseEmitter.event().name("heartbeat").data("ping"));
-            } catch (IOException e) {
-                // 이 에러는 클라이언트가 브라우저를 닫는 등 정상적으로 연결이 끊어졌을 때 발생하므로, 경고 레벨로 기록합니다.
-                log.warn("Heartbeat failed for user {}, removing emitter.", userId);
-                emitters.remove(userId);
-            }
+        sseEmitterService.getEmitters().forEach((userId, emitter) -> {
+            sseEmitterService.sendToClient(userId, "heartbeat", "ping");
         });
     }
-
 
     @Transactional(readOnly = true)
     public List<NotificationDto> getNotifications(String userId) {
         UserEntity user = userRepository.findByUserId(userId);
-        return notificationRepository.findByReceiverOrderByCreatedAtDesc(user)
+        return notificationRepository.findByReceiverAndIsReadFalseOrderByCreatedAtDesc(user)
                 .stream()
                 .map(NotificationDto::fromEntity)
                 .collect(Collectors.toList());

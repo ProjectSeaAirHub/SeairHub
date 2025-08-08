@@ -8,6 +8,7 @@ import net.dima.project.entity.RequestEntity;
 import net.dima.project.entity.UserEntity;
 import net.dima.project.repository.ContainerCargoRepository;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import java.util.HashSet;
 import java.util.List;
@@ -18,11 +19,13 @@ import java.util.Set;
 public class NotificationEventListener {
 
     private final NotificationService notificationService;
+    private final ChatService chatService; // ChatService를 주입받습니다.
     private final ContainerCargoRepository containerCargoRepository;
 
     /**
      * 신규 제안 생성 이벤트를 처리합니다.
      */
+    @Async
     @EventListener
     public void handleOfferCreatedEvent(OfferCreatedEvent event) {
         OfferEntity offer = event.getOffer();
@@ -57,6 +60,8 @@ public class NotificationEventListener {
                 notificationService.sendNotification(offer.getForwarder(), message, url);
             }
         }
+     // [추가] 채팅방 생성 로직을 이곳으로 이동하여 함께 비동기 처리합니다.
+        chatService.createChatRoomForOffer(winningOffer);
     }
 
     /**

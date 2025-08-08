@@ -100,5 +100,15 @@ public interface RequestRepository extends JpaRepository<RequestEntity, Long>, J
      */
     @Query("SELECT COUNT(r) FROM RequestEntity r WHERE r.status = 'CLOSED' OR (r.status = 'OPEN' AND r.deadline < :now)")
     long countTotalClosedOrExpiredRequests(@Param("now") LocalDateTime now);
+    
+    /**
+     * [✅ 핵심 추가] 스케줄러가 마감된 재판매 요청을 찾기 위한 쿼리입니다.
+     * - sourceOffer가 NULL이 아니고 (재판매 요청이고)
+     * - status가 'OPEN'이며 (아직 처리되지 않았고)
+     * - deadline이 현재 시간 이전인 (마감 시간이 지난)
+     * 모든 요청을 조회합니다.
+     */
+    @Query("SELECT r FROM RequestEntity r WHERE r.sourceOffer IS NOT NULL AND r.status = 'OPEN' AND r.deadline < :now")
+    List<RequestEntity> findExpiredResaleRequests(@Param("now") LocalDateTime now);
 
 }

@@ -9,10 +9,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/chat")
@@ -33,5 +36,21 @@ public class ChatApiController {
     public ResponseEntity<List<ChatMessageDto>> getChatMessages(@PathVariable("roomId") Long roomId) {
         List<ChatMessageDto> messages = chatService.getMessagesForChatRoom(roomId);
         return ResponseEntity.ok(messages);
+    }
+    
+    // [이 메서드를 추가해주세요]
+    @PutMapping("/rooms/{roomId}/name")
+    public ResponseEntity<Void> updateChatRoomName(
+            @PathVariable("roomId") Long roomId,
+            @RequestBody Map<String, String> payload,
+            @AuthenticationPrincipal LoginUserDetails userDetails) {
+        
+        String newName = payload.get("name");
+        if (newName == null || newName.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        
+        chatService.updateChatRoomName(userDetails.getUserSeq(), roomId, newName.trim());
+        return ResponseEntity.ok().build();
     }
 }
