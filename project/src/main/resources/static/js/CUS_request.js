@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		// [✅ 수정] 출발/도착항 선택 연동 로직
 		const departurePortSelect = document.getElementById('departurePort');
 		const arrivalPortSelect = document.getElementById('arrivalPort');
+		const tradeTypeInput = document.getElementById('tradeType'); // 추가
 
         const portGroups = {
             '인천': 'KR', '부산': 'KR',
@@ -53,9 +54,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 		    }
 		};
+		
+		const updateTradeType = () => {
+		    const selectedDeparture = departurePortSelect.value;
+		    if (selectedDeparture === '인천' || selectedDeparture === '부산') {
+		        tradeTypeInput.value = '수출';
+		    } else if (selectedDeparture) { // 인천, 부산 외 다른 항구가 선택되었을 때
+		        tradeTypeInput.value = '수입';
+		    } else {
+		        tradeTypeInput.value = ''; // 아무것도 선택되지 않았을 때
+		    }
+		};
 
 		// 각 드롭다운 메뉴에 변경 이벤트가 발생할 때마다 함수를 호출
-		departurePortSelect.addEventListener('change', updatePortOptions);
+		departurePortSelect.addEventListener('change', () => {
+		    updatePortOptions();
+		    updateTradeType(); // 출발항 변경 시 무역 유형 업데이트 함수 호출
+		});
 		arrivalPortSelect.addEventListener('change', updatePortOptions);
 		
 		
@@ -105,90 +120,88 @@ document.addEventListener('DOMContentLoaded', () => {
 	    }
 
 	    // 이벤트 위임을 사용하여 목록 전체에 대한 클릭 이벤트를 한 번만 등록합니다.
-	    viewContainer.addEventListener('click', async (e) => {
-	        const target = e.target;
+		viewContainer.addEventListener('click', async (e) => {
+		    const target = e.target;
 
-	        // '제안 보기' 버튼(.btn-details)을 클릭했을 때만 동작합니다.
-	        if (target.classList.contains('btn-details')) {
-	            const requestCard = target.closest('.request-card');
-	            const itemContainer = requestCard.closest('.request-item-container');
-	            const detailsContainer = itemContainer.querySelector('.offer-details-container');
-	            const requestId = requestCard.dataset.requestId;
+		    // '제안 보기' 버튼(.btn-details)을 클릭했을 때만 동작합니다.
+		    if (target.classList.contains('btn-details')) {
+		        const requestCard = target.closest('.request-card');
+		        const itemContainer = requestCard.closest('.request-item-container');
+		        const detailsContainer = itemContainer.querySelector('.offer-details-container');
+		        const requestId = requestCard.dataset.requestId;
 
-	            if (!itemContainer || !detailsContainer) return;
+		        if (!itemContainer || !detailsContainer) return;
 
-	            // 이미 열려있다면 닫습니다.
-	            if (itemContainer.classList.contains('is-expanded')) {
-	                detailsContainer.innerHTML = '';
-	                itemContainer.classList.remove('is-expanded');
-	                return;
-	            }
-	            
-	            // 다른 열려있는 제안 목록이 있다면 모두 닫습니다.
-	            document.querySelectorAll('.request-item-container.is-expanded').forEach(openItem => {
-	                openItem.classList.remove('is-expanded');
-	                const openDetails = openItem.querySelector('.offer-details-container');
-	                if (openDetails) openDetails.innerHTML = '';
-	            });
+		        if (itemContainer.classList.contains('is-expanded')) {
+		            detailsContainer.innerHTML = '';
+		            itemContainer.classList.remove('is-expanded');
+		            return;
+		        }
+		        
+		        document.querySelectorAll('.request-item-container.is-expanded').forEach(openItem => {
+		            openItem.classList.remove('is-expanded');
+		            const openDetails = openItem.querySelector('.offer-details-container');
+		            if (openDetails) openDetails.innerHTML = '';
+		        });
 
-	            try {
-	                detailsContainer.innerHTML = `<p class="loading-message" style="text-align:center; padding: 2rem;">제안 목록을 불러오는 중...</p>`;
-	                itemContainer.classList.add('is-expanded');
+		        try {
+		            detailsContainer.innerHTML = `<p class="loading-message" style="text-align:center; padding: 2rem;">제안 목록을 불러오는 중...</p>`;
+		            itemContainer.classList.add('is-expanded');
 
-	                // API를 호출하여 해당 요청에 대한 제안 목록을 가져옵니다.
-	                const response = await fetch(`/api/cus/requests/${requestId}/offers`);
-	                if (!response.ok) throw new Error('제안 정보를 불러오지 못했습니다.');
-	                
-	                const offers = await response.json();
-	                const templateClone = offerTemplate.content.cloneNode(true);
-	                const tableBody = templateClone.querySelector('tbody');
+		            const response = await fetch(`/api/cus/requests/${requestId}/offers`);
+		            if (!response.ok) throw new Error('제안 정보를 불러오지 못했습니다.');
+		            
+		            const offers = await response.json();
+		            const templateClone = offerTemplate.content.cloneNode(true);
+		            const tableBody = templateClone.querySelector('tbody');
 
-	                if (offers.length === 0) {
-	                    tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">도착한 제안이 없습니다.</td></tr>';
-	                } else {
-	                    offers.forEach(offer => {
-	                        const row = tableBody.insertRow();
-	                        row.innerHTML = `
-	                            <td>${offer.forwarderCompanyName}</td>
-	                            <td>${offer.containerId}</td>
-	                            <td>${offer.price.toLocaleString()} ${offer.currency}</td>
-	                            <td>${offer.etd}</td>
-	                            <td>${offer.eta}</td>
-	                            <td><button class="btn btn-sm btn-success btn-confirm-offer" data-offer-id="${offer.offerId}">확정</button></td>
-	                        `;
-	                    });
-	                }
-	                detailsContainer.innerHTML = '';
-	                detailsContainer.appendChild(templateClone);
+		            if (offers.length === 0) {
+		                tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">도착한 제안이 없습니다.</td></tr>';
+		            } else {
+		                offers.forEach(offer => {
+		                    const row = tableBody.insertRow();
+		                    // [✅ 핵심 수정] offer.forwarderCompanyName 대신 경로 정보를 표시합니다.
+		                    row.innerHTML = `
+		                        <td>${offer.departurePort} → ${offer.arrivalPort}</td>
+		                        <td>${offer.containerId}</td>
+		                        <td>${offer.price.toLocaleString()} ${offer.currency}</td>
+		                        <td>${offer.etd}</td>
+		                        <td>${offer.eta}</td>
+		                        <td><button class="btn btn-sm btn-success btn-confirm-offer" data-offer-id="${offer.offerId}">확정</button></td>
+		                    `;
+		                });
+		            }
+		            detailsContainer.innerHTML = '';
+		            detailsContainer.appendChild(templateClone);
 
-	            } catch (error) {
-	                console.error("Error fetching offers:", error);
-	                detailsContainer.innerHTML = `<p class="error-message" style="padding: 1rem; text-align: center; color: red;">${error.message}</p>`;
-	            }
-	        }
+		        } catch (error) {
+		            console.error("Error fetching offers:", error);
+		            detailsContainer.innerHTML = `<p class="error-message" style="padding: 1rem; text-align: center; color: red;">${error.message}</p>`;
+		        }
+		    }
 
-	        // '확정' 버튼 클릭 처리
-	        if (target.classList.contains('btn-confirm-offer')) {
-	            const requestCard = target.closest('.request-item-container').querySelector('.request-card');
-	            const requestId = requestCard.dataset.requestId;
-	            const winningOfferId = target.dataset.offerId;
+		    // '확정' 버튼 클릭 처리 (기존과 동일)
+		    if (target.classList.contains('btn-confirm-offer')) {
+		        const requestCard = target.closest('.request-item-container').querySelector('.request-card');
+		        const requestId = requestCard.dataset.requestId;
+		        const winningOfferId = target.dataset.offerId;
 
-	            if (confirm('이 제안을 최종 확정하시겠습니까?')) {
-	                try {
-	                    const response = await fetch(`/api/cus/requests/${requestId}/confirm`, {
-	                        method: 'POST',
-	                        headers: { 'Content-Type': 'application/json' },
-	                        body: JSON.stringify({ winningOfferId: winningOfferId })
-	                    });
-	                    const message = await response.text();
-	                    alert(message);
-	                    if (response.ok) {
-	                        window.location.reload();
-	                    }
-	                } catch (error) {
-	                    alert("확정 처리 중 오류가 발생했습니다.");
-	                }
-	            }
-	        }
-	    });
+		        if (confirm('이 제안을 최종 확정하시겠습니까?')) {
+		            try {
+		                const response = await fetch(`/api/cus/requests/${requestId}/confirm`, {
+		                    method: 'POST',
+		                    headers: { 'Content-Type': 'application/json' },
+		                    body: JSON.stringify({ winningOfferId: winningOfferId })
+		                });
+		                const message = await response.text();
+		                alert(message);
+		                if (response.ok) {
+		                    window.location.reload();
+		                }
+		            } catch (error) {
+		                alert("확정 처리 중 오류가 발생했습니다.");
+		            }
+		        }
+		    }
+		});
 	});

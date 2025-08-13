@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const startDate = document.getElementById('start-date').value;
         const endDate = document.getElementById('end-date').value;
         
-        summaryModal.querySelector('#summary-modal-title').textContent = `요청 합계 (${startDate} ~ ${endDate})`;
+        summaryModal.querySelector('#summary-modal-title').textContent = `지출 합계 (${startDate} ~ ${endDate})`;
         summaryModal.querySelector('#summary-modal-body').innerHTML = detailsHtml + summaryHtml;
         summaryModal.style.display = 'flex';
     }

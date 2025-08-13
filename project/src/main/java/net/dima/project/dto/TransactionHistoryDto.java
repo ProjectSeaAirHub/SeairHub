@@ -4,7 +4,8 @@ import lombok.Builder;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-// 거래내역을 위한 DTO
+//거래내역을 위한 DTO
+
 @Data
 @Builder
 public class TransactionHistoryDto {

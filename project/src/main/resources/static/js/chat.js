@@ -1,3 +1,4 @@
+// [✅ chat.js 파일 전체를 이 최종 코드로 교체해주세요]
 document.addEventListener('DOMContentLoaded', () => {
     const container = document.querySelector('body'); 
     const currentUserSeq = container.dataset.userSeq;
@@ -7,6 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedChatRoomId = null;
     let subscriptions = new Map();
 
+    let isChatWidgetVisible = false;
+
     const chatListContainer = document.getElementById('chat-list-container');
     const chatRoomView = document.getElementById('chat-room-view');
     const noChatSelectedView = document.getElementById('no-chat-selected');
@@ -15,15 +18,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const messageInput = document.getElementById('chat-message-input');
     const sendMessageBtn = document.getElementById('send-message-btn');
     const addGroupBtn = document.getElementById('add-group-btn');
-
     const inputModal = document.getElementById('input-modal');
     const inputModalTitle = document.getElementById('input-modal-title');
     const inputModalField = document.getElementById('input-modal-field');
     const inputModalConfirm = document.getElementById('input-modal-confirm');
     const inputModalCancel = document.getElementById('input-modal-cancel');
     const inputModalClose = document.getElementById('input-modal-close');
-
     const CHAT_GROUPS_KEY = `chatGroups_${currentUserSeq}`;
+
+    // [✅ 핵심 수정 1] 로딩되자마자 부모 창에 준비되었음을 알립니다.
+    if (window.parent) {
+        window.parent.postMessage({ type: 'chatReady' }, '*');
+    }
+    
+    // [✅ 핵심 수정 2] 부모 창의 메시지를 수신하여 자신의 '보임/숨김' 상태를 업데이트합니다.
+    window.addEventListener('message', (event) => {
+        // 보안을 위해 부모 창에서 온 메시지만 처리합니다.
+        if (event.source !== window.parent) {
+            return;
+        }
+        if (event.data && event.data.type === 'chatVisibility') {
+            isChatWidgetVisible = event.data.visible;
+            if (isChatWidgetVisible && selectedChatRoomId) {
+                fetch(`/api/chat/rooms/${selectedChatRoomId}/read`, { method: 'POST' });
+            }
+        }
+    });
 
     async function loadChatRoomsAndGroups() {
         try {
@@ -56,7 +76,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // [✅ 추가] 외부(부모 창)에서 이 함수를 호출할 수 있도록 window 객체에 할당
     window.refreshChatList = loadChatRoomsAndGroups;
 
     function createGroupElement(id, name) {
@@ -130,8 +149,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const response = await fetch(`/api/chat/rooms/${roomId}/messages`);
         const messages = await response.json();
         messages.forEach(showMessage);
+        
         const subscription = stompClient.subscribe('/topic/chatroom/' + roomId, (message) => {
             showMessage(JSON.parse(message.body));
+            
+            if (isChatWidgetVisible) {
+                fetch(`/api/chat/rooms/${roomId}/read`, { method: 'POST' });
+            }
         });
         subscriptions.set(roomId, subscription);
     }
@@ -175,8 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
         stompClient = Stomp.over(socket);
         stompClient.connect({}, (frame) => {
             console.log('Connected: ' + frame);
-            loadChatRoomsAndGroups(); 
-            // [✅ 수정] 이 파일 내의 중복 SSE 연결 로직 삭제
+            loadChatRoomsAndGroups();
         });
     }
 
@@ -194,139 +217,21 @@ document.addEventListener('DOMContentLoaded', () => {
         inputModalField.value = '';
         onConfirmCallback = null;
     };
-    
-    inputModalConfirm.addEventListener('click', () => {
-        if (onConfirmCallback) {
-            onConfirmCallback(inputModalField.value);
-        }
-    });
-    inputModalField.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            inputModalConfirm.click();
-        }
-    });
+    inputModalConfirm.addEventListener('click', () => { if (onConfirmCallback) { onConfirmCallback(inputModalField.value); } });
+    inputModalField.addEventListener('keypress', (e) => { if (e.key === 'Enter') { inputModalConfirm.click(); } });
     inputModalCancel.addEventListener('click', closeInputModal);
     inputModalClose.addEventListener('click', closeInputModal);
-
     let draggedItem = null;
-    chatListContainer.addEventListener('dragstart', (e) => {
-        if (e.target.classList.contains('chat-room-item')) {
-            draggedItem = e.target;
-            setTimeout(() => e.target.style.display = 'none', 0);
-        }
-    });
-    chatListContainer.addEventListener('dragend', (e) => {
-        if (draggedItem) {
-            setTimeout(() => {
-                draggedItem.style.display = '';
-                draggedItem = null;
-            }, 0);
-        }
-    });
-    chatListContainer.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        const groupContent = e.target.closest('.chat-group-content');
-        if (groupContent) {
-            groupContent.classList.add('drag-over');
-        }
-    });
-    chatListContainer.addEventListener('dragleave', (e) => {
-        const groupContent = e.target.closest('.chat-group-content');
-        if (groupContent) {
-            groupContent.classList.remove('drag-over');
-        }
-    });
-    chatListContainer.addEventListener('drop', (e) => {
-        e.preventDefault();
-        const groupContent = e.target.closest('.chat-group-content');
-        if (groupContent && draggedItem) {
-            groupContent.appendChild(draggedItem);
-            groupContent.classList.remove('drag-over');
-            const roomId = draggedItem.dataset.roomId;
-            const newGroupId = groupContent.parentElement.dataset.groupId;
-            let groups = JSON.parse(localStorage.getItem(CHAT_GROUPS_KEY)) || {};
-            Object.keys(groups).forEach(gId => {
-                groups[gId].rooms = groups[gId].rooms.filter(rId => rId !== roomId);
-            });
-            if (newGroupId !== 'unassigned') {
-                if (!groups[newGroupId]) {
-                    groups[newGroupId] = { name: 'Unknown', rooms: [] };
-                }
-                groups[newGroupId].rooms.push(roomId);
-            }
-            localStorage.setItem(CHAT_GROUPS_KEY, JSON.stringify(groups));
-        }
-    });
-
+    chatListContainer.addEventListener('dragstart', (e) => { if (e.target.classList.contains('chat-room-item')) { draggedItem = e.target; setTimeout(() => e.target.style.display = 'none', 0); } });
+    chatListContainer.addEventListener('dragend', (e) => { if (draggedItem) { setTimeout(() => { draggedItem.style.display = ''; draggedItem = null; }, 0); } });
+    chatListContainer.addEventListener('dragover', (e) => { e.preventDefault(); const groupContent = e.target.closest('.chat-group-content'); if (groupContent) { groupContent.classList.add('drag-over'); } });
+    chatListContainer.addEventListener('dragleave', (e) => { const groupContent = e.target.closest('.chat-group-content'); if (groupContent) { groupContent.classList.remove('drag-over'); } });
+    chatListContainer.addEventListener('drop', (e) => { e.preventDefault(); const groupContent = e.target.closest('.chat-group-content'); if (groupContent && draggedItem) { groupContent.appendChild(draggedItem); groupContent.classList.remove('drag-over'); const roomId = draggedItem.dataset.roomId; const newGroupId = groupContent.parentElement.dataset.groupId; let groups = JSON.parse(localStorage.getItem(CHAT_GROUPS_KEY)) || {}; Object.keys(groups).forEach(gId => { groups[gId].rooms = groups[gId].rooms.filter(rId => rId !== roomId); }); if (newGroupId !== 'unassigned') { if (!groups[newGroupId]) { groups[newGroupId] = { name: 'Unknown', rooms: [] }; } groups[newGroupId].rooms.push(roomId); } localStorage.setItem(CHAT_GROUPS_KEY, JSON.stringify(groups)); } });
     sendMessageBtn.addEventListener('click', sendMessage);
-    messageInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendMessage();
-    });
-
-    chatListContainer.addEventListener('click', (e) => {
-        const roomItem = e.target.closest('.chat-room-item');
-        if (roomItem) {
-            selectChatRoom(roomItem.dataset.roomId);
-        }
-        
-        if (e.target.classList.contains('delete-group-btn')) {
-            const group = e.target.closest('.chat-group');
-            const groupId = group.dataset.groupId;
-            const groupName = group.querySelector('.chat-group-header span').textContent;
-            if (confirm(`'${groupName}' 그룹을 삭제하시겠습니까?\n(내부의 채팅방은 '미분류'로 이동됩니다.)`)) {
-                let groups = JSON.parse(localStorage.getItem(CHAT_GROUPS_KEY)) || {};
-                const unassignedGroup = chatListContainer.querySelector('.chat-group[data-group-id="unassigned"] .chat-group-content');
-                Array.from(group.querySelectorAll('.chat-room-item')).forEach(roomEl => {
-                    unassignedGroup.appendChild(roomEl);
-                });
-                delete groups[groupId];
-                localStorage.setItem(CHAT_GROUPS_KEY, JSON.stringify(groups));
-                group.remove();
-            }
-        }
-    });
-	
-	addGroupBtn.addEventListener('click', () => {
-        openInputModal('새 그룹 추가', '', '그룹 이름을 입력하세요', (name) => {
-            if (name && name.trim()) {
-                let groups = JSON.parse(localStorage.getItem(CHAT_GROUPS_KEY)) || {};
-                const newGroupId = `group_${Date.now()}`;
-                groups[newGroupId] = { name: name.trim(), rooms: [] };
-                localStorage.setItem(CHAT_GROUPS_KEY, JSON.stringify(groups));
-                createGroupElement(newGroupId, name.trim());
-                closeInputModal();
-            }
-        });
-    });
-
-	chatRoomTitle.addEventListener('click', () => {
-	    if (!selectedChatRoomId) return; 
-	    const currentName = chatRoomTitle.textContent;
-        openInputModal('채팅방 이름 변경', currentName, '', (newName) => {
-            if (newName && newName.trim() !== '' && newName !== currentName) {
-	            updateChatRoomName(selectedChatRoomId, newName.trim());
-	        }
-            closeInputModal();
-        });
-	});
-	
-	async function updateChatRoomName(roomId, name) {
-	    try {
-	        const response = await fetch(`/api/chat/rooms/${roomId}/name`, {
-	            method: 'PUT',
-	            headers: { 'Content-Type': 'application/json' },
-	            body: JSON.stringify({ name: name })
-	        });
-	        if (!response.ok) {
-	            throw new Error('이름 변경에 실패했습니다.');
-	        }
-	        chatRoomTitle.textContent = name;
-	        document.querySelector(`.chat-room-item[data-room-id='${roomId}'] .room-name`).textContent = name;
-	    } catch (error) {
-	        console.error(error);
-	        alert(error.message);
-	    }
-	}
-	
+    messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+    chatListContainer.addEventListener('click', (e) => { const roomItem = e.target.closest('.chat-room-item'); if (roomItem) { selectChatRoom(roomItem.dataset.roomId); } if (e.target.classList.contains('delete-group-btn')) { const group = e.target.closest('.chat-group'); const groupId = group.dataset.groupId; const groupName = group.querySelector('.chat-group-header span').textContent; if (confirm(`'${groupName}' 그룹을 삭제하시겠습니까?\n(내부의 채팅방은 '미분류'로 이동됩니다.)`)) { let groups = JSON.parse(localStorage.getItem(CHAT_GROUPS_KEY)) || {}; const unassignedGroup = chatListContainer.querySelector('.chat-group[data-group-id="unassigned"] .chat-group-content'); Array.from(group.querySelectorAll('.chat-room-item')).forEach(roomEl => { unassignedGroup.appendChild(roomEl); }); delete groups[groupId]; localStorage.setItem(CHAT_GROUPS_KEY, JSON.stringify(groups)); group.remove(); } } });
+	addGroupBtn.addEventListener('click', () => { openInputModal('새 그룹 추가', '', '그룹 이름을 입력하세요', (name) => { if (name && name.trim()) { let groups = JSON.parse(localStorage.getItem(CHAT_GROUPS_KEY)) || {}; const newGroupId = `group_${Date.now()}`; groups[newGroupId] = { name: name.trim(), rooms: [] }; localStorage.setItem(CHAT_GROUPS_KEY, JSON.stringify(groups)); createGroupElement(newGroupId, name.trim()); closeInputModal(); } }); });
+	chatRoomTitle.addEventListener('click', () => { if (!selectedChatRoomId) return; const currentName = chatRoomTitle.textContent; openInputModal('채팅방 이름 변경', currentName, '', (newName) => { if (newName && newName.trim() !== '' && newName !== currentName) { updateChatRoomName(selectedChatRoomId, newName.trim()); } closeInputModal(); }); });
+	async function updateChatRoomName(roomId, name) { try { const response = await fetch(`/api/chat/rooms/${roomId}/name`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name }) }); if (!response.ok) { throw new Error('이름 변경에 실패했습니다.'); } chatRoomTitle.textContent = name; document.querySelector(`.chat-room-item[data-room-id='${roomId}'] .room-name`).textContent = name; } catch (error) { console.error(error); alert(error.message); } }
     connect();
 });

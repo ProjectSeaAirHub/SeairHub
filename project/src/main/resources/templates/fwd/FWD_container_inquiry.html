@@ -135,7 +135,7 @@
                                             <div class="status-color-bar empty"></div>
                                             <p class="title">입찰가능</p>
                                             <p class="amount" th:text="${#numbers.formatDecimal(c.availableCbm, 1, 2)} + ' CBM'"></p>
-                                            <button class="btn btn-sm btn-primary">추가입찰</button>
+                                            <a th:href="@{/fwd/fwdRequest}" class="btn btn-sm btn-primary" th:classappend="${activeMenu == 'fwdRequest'} ? 'is-active' : ''">추가입찰</a></li>
                                         </div>
                                     </div>
                                 </div>

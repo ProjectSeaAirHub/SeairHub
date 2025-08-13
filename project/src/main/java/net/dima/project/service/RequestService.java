@@ -119,8 +119,10 @@ public class RequestService {
         Page<RequestEntity> requestPage = requestRepository.findAll(spec, pageable);
         List<RequestEntity> requestsOnPage = requestPage.getContent();
 
-        List<RequestEntity> openRequests = requestsOnPage.stream().filter(r -> r.getStatus() == RequestStatus.OPEN).collect(Collectors.toList());
-        List<RequestEntity> closedRequests = requestsOnPage.stream().filter(r -> r.getStatus() == RequestStatus.CLOSED).collect(Collectors.toList());
+        List<RequestEntity> allRequests = requestRepository.findAll(spec, pageable.getSort());
+
+        List<RequestEntity> openRequests = allRequests.stream().filter(r -> r.getStatus() == RequestStatus.OPEN).collect(Collectors.toList());
+        List<RequestEntity> closedRequests = allRequests.stream().filter(r -> r.getStatus() == RequestStatus.CLOSED).collect(Collectors.toList());
 
         Map<Long, Long> bidderCounts = offerRepository.countOffersByRequestIn(openRequests).stream()
                 .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
@@ -129,8 +131,8 @@ public class RequestService {
         Map<Long, Optional<OfferEntity>> finalOffers = closedRequests.stream()
                 .collect(Collectors.toMap(RequestEntity::getRequestId, this::findFinalOffer));
 
-        // ✅ Page의 내용물(List)을 스트림으로 변환하여 처리 후, 새로운 Page 객체로 다시 만듭니다.
-        List<MyPostedRequestDto> dtoList = requestsOnPage.stream()
+        // 2. '정산완료' 건을 제외한 최종 DTO 리스트를 만듭니다.
+        List<MyPostedRequestDto> fullDtoList = allRequests.stream()
             .map(req -> {
                 if (req.getStatus() == RequestStatus.OPEN) {
                     return MyPostedRequestDto.fromEntity(req, bidderCounts.getOrDefault(req.getRequestId(), 0L));
@@ -144,11 +146,16 @@ public class RequestService {
                     return MyPostedRequestDto.fromEntity(req, directWinningOfferOpt, finalOfferInChainOpt);
                 }
             })
-            .filter(dto -> dto != null) // 정산완료 건(null)을 최종적으로 걸러냅니다.
+            .filter(dto -> dto != null)
             .collect(Collectors.toList());
-            
-        // ✅ PageImpl을 사용하여 필터링된 리스트와 기존 페이징 정보를 합쳐 새로운 Page 객체를 생성하여 반환합니다.
-        return new PageImpl<>(dtoList, pageable, requestPage.getTotalElements());
+
+        // 3. 필터링이 완료된 최종 리스트를 가지고 수동으로 페이지네이션을 적용합니다.
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), fullDtoList.size());
+        
+        List<MyPostedRequestDto> pageContent = (start > end) ? List.of() : fullDtoList.subList(start, end);
+        
+        return new PageImpl<>(pageContent, pageable, fullDtoList.size());
     }
     
     private Optional<OfferEntity> findFinalOffer(RequestEntity request) {

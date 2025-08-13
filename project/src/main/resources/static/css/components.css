@@ -64,7 +64,8 @@
 }
 
 .form-input,
-.date-input {
+.date-input,
+.form-input#tradeType {
     /* 이 부분에 border 속성을 추가합니다. */
     border: 1px solid var(--border-color);
     background-color: white;

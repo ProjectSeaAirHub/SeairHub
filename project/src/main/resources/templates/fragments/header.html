@@ -46,11 +46,20 @@
         document.addEventListener('DOMContentLoaded', () => {
             const chatFab = document.getElementById('chat-fab');
             const chatWidget = document.getElementById('chat-widget-container');
+            const iframe = document.querySelector('#chat-widget-container iframe');
+            
+            // [✅ 추가] 부모 창에서 채팅 위젯의 현재 상태를 관리합니다.
+            let isChatOpen = false;
 
-            if(chatFab && chatWidget) {
+            if(chatFab && chatWidget && iframe) {
                 chatFab.addEventListener('click', () => {
-                    const isOpen = chatWidget.classList.toggle('is-open');
-                    if (isOpen) {
+                    isChatOpen = chatWidget.classList.toggle('is-open');
+                    
+                    if (iframe.contentWindow) {
+                        iframe.contentWindow.postMessage({ type: 'chatVisibility', visible: isChatOpen }, '*');
+                    }
+
+                    if (isChatOpen) {
                         chatWidget.style.opacity = '1';
                         chatWidget.style.transform = 'scale(1)';
                     } else {
@@ -58,15 +67,17 @@
                         chatWidget.style.transform = 'scale(0.8)';
                     }
                 });
+
+                // [✅ 추가] iframe(chat.js)으로부터 "준비됐다"는 신호를 받으면, 현재 상태를 알려줍니다.
+                window.addEventListener('message', (event) => {
+                    if (event.source === iframe.contentWindow && event.data && event.data.type === 'chatReady') {
+                        iframe.contentWindow.postMessage({ type: 'chatVisibility', visible: isChatOpen }, '*');
+                    }
+                });
             }
 
-            // [✅ 수정] SSE 이벤트 수신 시, 채팅 위젯 내부 함수를 직접 호출
             document.addEventListener('sse:unreadChat', (event) => {
-                // 1. 우측 하단 버튼의 전체 숫자 업데이트
                 updateTotalUnreadCount();
-
-                // 2. 채팅 위젯(iframe) 내부의 목록도 업데이트하도록 함수 호출
-                const iframe = document.querySelector('#chat-widget-container iframe');
                 if (iframe && typeof iframe.contentWindow.refreshChatList === 'function') {
                     iframe.contentWindow.refreshChatList();
                 }
@@ -94,5 +105,4 @@
         });
     </script>
 </div>
-
 </html>

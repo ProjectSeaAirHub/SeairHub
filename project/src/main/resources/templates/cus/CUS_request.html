@@ -17,7 +17,7 @@
         <section class="content">
             <div id="view-container">
                 <div id="list-view">
-                    <h2 class="page-title">나의요청 관리</h2>
+                    <h2 class="page-title">나의요청조회</h2>
 						<div class="controls-bar">
 						    <div class="sort-group">
 						        <a th:href="@{/cus/cusRequest(sort='createdAt,' + (${currentSortField == 'createdAt'} ? ${reverseSortDirection} : 'desc'), excludeClosed=${excludeClosed}, itemName=${itemName})}"
@@ -151,7 +151,7 @@
     <table class="bids-table">
         <thead>
             <tr>
-                <th>제안자 (포워더)</th>
+                <th>경로</th>
                 <th>컨테이너 ID</th>
                 <th>제안 운임</th>
                 <th>ETD</th>
@@ -166,7 +166,7 @@
 <div id="request-modal" class="modal-wrapper">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>신규 화물 요청</h3>
+            <h3>신규 운송 요청</h3>
             <button class="btn-close">×</button>
         </div>
         <form id="new-request-form">
@@ -205,7 +205,7 @@
                         <label for="deadline" style="font-size:14px; margin-bottom: 4px; display:block;">요청 마감일</label>
                         <input type="datetime-local" id="deadline" class="form-input" required>
                     </div>
-                    <select id="tradeType" class="form-input"><option value="수출">수출</option><option value="수입">수입</option></select>
+                    <input type="text" id="tradeType" name="tradeType" class="form-input" placeholder="수출/수입" readonly required>
                     <select id="transportType" class="form-input"><option value="해상">해상</option><option value="항공">항공</option></select>
                 </div>
             </div>

@@ -1,4 +1,4 @@
-// [✅ ResaleService.java 파일 전체를 이 최종 코드로 교체해주세요]
+// [✅ /service/ResaleService.java 파일 전체를 이 최종 코드로 교체해주세요]
 package net.dima.project.service;
 
 import java.time.LocalDateTime;
@@ -128,12 +128,18 @@ public class ResaleService {
                     return MyPostedRequestDto.fromEntity(req, bidderCount);
                 } else { // CLOSED
                     Optional<OfferEntity> winningOfferOpt = Optional.ofNullable(winningOffers.get(req.getRequestId()));
+                    
+                    // [✅ 핵심 수정] 마감된 요청인데 낙찰자가 없으면(즉, 기간만료로 자동취소된 건이면) 목록에서 제외합니다.
+                    if (winningOfferOpt.isEmpty()) {
+                        return null;
+                    }
+                    
                     MyPostedRequestDto dto = MyPostedRequestDto.fromEntity(req, winningOfferOpt);
                     finalOfferOpt.ifPresent(finalOffer -> dto.setImoNumber(finalOffer.getContainer().getImoNumber()));
                     return dto;
                 }
             })
-            .filter(dto -> dto != null)
+            .filter(dto -> dto != null) // null로 반환된 항목(기간만료, 정산완료 건)을 최종적으로 걸러냅니다.
             .collect(Collectors.toList());
 
         List<MyPostedRequestDto> filteredList;

@@ -7,11 +7,7 @@
     <link rel="stylesheet" th:href="@{/css/layout.css}">
     <link rel="stylesheet" th:href="@{/css/components.css}">
     <style>
-        html, body {
-            height: 100%;
-            overflow: hidden;
-            background-color: #fff;
-        }
+        html, body { height: 100%; overflow: hidden; background-color: #fff; }
         .chat-layout { display: flex; height: 100%; }
         .chat-list-panel { width: 220px; border-right: 1px solid var(--border-color); flex-shrink: 0; display: flex; flex-direction: column; }
         .chat-list-header { padding: 16px; font-size: 18px; font-weight: 700; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
@@ -28,7 +24,6 @@
         .room-name { font-weight: 600; margin-bottom: 4px; }
         .last-message { font-size: 14px; color: #868e96; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        /* [✅ 수정] 채팅방 목록의 숫자 배지 스타일 수정 */
         .unread-count { 
             position: absolute; 
             top: 8px;
@@ -62,8 +57,35 @@
         .chat-input-area input { flex-grow: 1; padding: 10px; border: 1px solid #ced4da; border-radius: 6px; }
         #no-chat-selected { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #868e96; }
 
-        #send-message-btn { width: 42px; height: 42px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #ffffff; border: 0.5px solid #000000 }
+        #send-message-btn { width: 42px; height: 42px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #ffffff; border:1px solid #d3d3d3; }
         #send-message-btn img { width: 20px; height: 20px; }
+        
+        /* [✅ 추가] 채팅방 선택 전 로고 워터마크 스타일 */
+        #no-chat-selected .placeholder-logo {
+            width: 80px;
+            height: auto;
+            opacity: 0.15;
+            margin-bottom: 24px;
+        }
+
+        /* [✅ 추가] 채팅 목록 스크롤바 스타일 */
+        .chat-list {
+            scrollbar-width: thin; /* Firefox */
+            scrollbar-color: #ced4da #f8f9fa; /* Firefox */
+        }
+        .chat-list::-webkit-scrollbar {
+            width: 6px; /* 스크롤바 너비 */
+        }
+        .chat-list::-webkit-scrollbar-track {
+            background-color: #f8f9fa; /* 스크롤바 배경 */
+        }
+        .chat-list::-webkit-scrollbar-thumb {
+            background-color: #ced4da; /* 스크롤바 막대 */
+            border-radius: 3px;
+        }
+        .chat-list::-webkit-scrollbar-thumb:hover {
+            background-color: #adb5bd; /* 마우스 올렸을 때 */
+        }
     </style>
 </head>
 <body th:attr="data-user-seq=${#authentication.principal.userSeq}, data-user-name=${#authentication.principal.userName}">
@@ -79,7 +101,7 @@
 
         <div class="chat-window">
             <div id="no-chat-selected">
-                <span style="font-size: 48px;">💬</span>
+                <img th:src="@{/images/Images.png}" alt="SEAIRHUB Logo" class="placeholder-logo">
                 <h3>채팅방을 선택해주세요.</h3>
             </div>
             <div id="chat-room-view" style="display: none; height: 100%; flex-direction: column;">

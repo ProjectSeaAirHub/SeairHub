@@ -15,6 +15,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // 클라이언트가 WebSocket 연결을 시작할 엔드포인트입니다.
         // SockJS는 WebSocket을 지원하지 않는 브라우저를 위한 대체 옵션을 제공합니다.
         registry.addEndpoint("/ws-chat").withSockJS();
+
     }
 
     @Override

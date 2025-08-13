@@ -7,8 +7,14 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
 import lombok.RequiredArgsConstructor;
 import net.dima.project.service.KakaoService;
+
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -23,6 +29,9 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        // [✅ 수정] CORS 설정을 명시적으로 추가
+        http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
+    	
         http.authorizeHttpRequests(auth -> auth
             .requestMatchers(
                 "/", "/login", "/join", 
@@ -33,6 +42,7 @@ public class SecurityConfig {
                 "/images/**", "/js/**", "/css/**",
                 "/approval-pending" // [추가] 승인 대기 페이지는 모두 접근 가능하도록
                 ,"/api/scfi-data" 
+                , "/ws-chat/**" 
             ).permitAll()
             .requestMatchers("/api/notifications/**").hasAnyRole("fwd", "cus", "admin")
             .requestMatchers("/download/**").authenticated()
@@ -104,6 +114,19 @@ public class SecurityConfig {
         http.csrf((auth) -> auth.disable());
 
         return http.build();
+    }
+    
+    // [✅ 추가] CORS 설정을 위한 Bean
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:8080", "https://*.ngrok-free.app"));
+        configuration.setAllowedMethods(Arrays.asList("GET","POST", "OPTIONS", "PUT", "DELETE"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     @Bean

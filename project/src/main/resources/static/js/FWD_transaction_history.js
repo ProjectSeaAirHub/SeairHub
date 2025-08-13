@@ -1,4 +1,4 @@
-// [✅ FWD_transaction_history.js 파일 전체를 이 코드로 교체해주세요]
+// [✅ /static/js/FWD_transaction_history.js 파일 전체를 이 최종 코드로 교체해주세요]
 document.addEventListener('DOMContentLoaded', () => {
 
     const filterGroup = document.getElementById('transaction-filter-group');
@@ -18,12 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const summaryModalTitle = document.getElementById('summary-modal-title');
     const summaryModalBody = document.getElementById('summary-modal-body');
 
-	// [추가] 페이지 로드 시 기본 날짜(해당 월 1일 ~ 오늘)를 설정하는 함수
 	const setDefaultDates = () => {
 	    const today = new Date();
 	    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-	    // Date 객체를 'YYYY-MM-DD' 형식의 문자열로 변환하는 헬퍼 함수
 	    const formatDate = (date) => {
 	        const year = date.getFullYear();
 	        const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -31,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	        return `${year}-${month}-${day}`;
 	    };
 
-	    // 각 날짜 입력창에 기본값 설정
 	    startDateInput.value = formatDate(firstDayOfMonth);
 	    endDateInput.value = formatDate(today);
 	};
@@ -110,12 +107,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const [amountStr, currency] = priceText.split(' ');
             const amount = parseFloat(amountStr.replace(/,/g, ''));
-            let displayAmount = amount;
             
-            if ((activeFilter === 'all' && type === '구매') || activeFilter === 'purchase') {
-                displayAmount = -amount;
-            }
-
+            // '구매'일 경우 비용이므로 음수로 계산합니다. '판매'는 양수(수익)입니다.
+            let displayAmount = (type === '구매') ? -amount : amount;
+            
             if (currency === 'KRW') totalKRW += displayAmount;
             if (currency === 'USD') totalUSD += displayAmount;
             
@@ -124,6 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         detailsHtml += '</tbody></table>';
 
+        // [✅ 핵심 수정 3] 수익(양수)은 파란색, 비용(음수)은 빨간색으로 표시하도록 색상 로직을 반대로 변경합니다.
         const totalColorKRW = totalKRW >= 0 ? 'color: red;' : 'color: blue;';
         const totalColorUSD = totalUSD >= 0 ? 'color: red;' : 'color: blue;';
         
@@ -131,43 +127,33 @@ document.addEventListener('DOMContentLoaded', () => {
         if (Math.abs(totalKRW) > 0) summaryHtml += `<p style="text-align: right; font-size: 1.2em; font-weight: bold; ${totalColorKRW}">${totalKRW.toLocaleString()} KRW</p>`;
         if (Math.abs(totalUSD) > 0) summaryHtml += `<p style="text-align: right; font-size: 1.2em; font-weight: bold; ${totalColorUSD}">${totalUSD.toLocaleString()} USD</p>`;
         
-        summaryModalTitle.textContent = `거래 합계 (${startDateInput.value} ~ ${endDateInput.value})`;
+        summaryModalTitle.textContent = `매출합계 (${startDateInput.value} ~ ${endDateInput.value})`;
         summaryModalBody.innerHTML = detailsHtml + summaryHtml;
         summaryModal.style.display = 'flex';
     }
 
-    // 4. 이벤트 리스너 설정
+    // (이하 이벤트 리스너 및 초기화 로직은 기존과 동일)
     filterGroup.addEventListener('click', (e) => {
         if (e.target.tagName !== 'BUTTON' || e.target.classList.contains('is-active')) return;
         filterGroup.querySelector('.is-active').classList.remove('is-active');
         e.target.classList.add('is-active');
         fetchAndRenderTransactions();
     });
-
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
         fetchAndRenderTransactions();
     });
-    
-    // ★★★ 핵심 수정 1: 날짜 변경 시, 버튼 상태 변경 함수 호출을 제거하고 조회만 실행 ★★★
     startDateInput.addEventListener('change', fetchAndRenderTransactions);
     endDateInput.addEventListener('change', fetchAndRenderTransactions);
-
-    // ★★★ 핵심 수정 2: '금액 계산' 버튼 클릭 시, 날짜 선택 여부를 확인하여 분기 처리 ★★★
     calcButton.addEventListener('click', () => {
         if (!startDateInput.value || !endDateInput.value) {
             alert('날짜를 지정한 뒤에 계산할 수 있습니다.');
-            return; // 날짜가 없으면 여기서 함수 종료
+            return;
         }
-        // 날짜가 있으면 계산 함수 실행
         showSummaryModal();
     });
-
     summaryModal.querySelector('.btn-close').addEventListener('click', () => summaryModal.style.display = 'none');
     summaryModal.querySelector('.btn-cancel').addEventListener('click', () => summaryModal.style.display = 'none');
-
-    // 5. 페이지 첫 로딩 시 실행 (불필요한 updateCalcButtonState 함수 호출 제거)
-	// 5. 페이지 첫 로딩 시 실행
-	setDefaultDates(); // [추가] 기본 날짜 설정 함수를 먼저 호출
-	fetchAndRenderTransactions(); // 그 다음, 설정된 날짜로 데이터를 조회
+	setDefaultDates();
+	fetchAndRenderTransactions();
 });

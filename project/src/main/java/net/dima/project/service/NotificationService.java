@@ -46,11 +46,9 @@ public class NotificationService {
         notificationRepository.save(notification);
         log.info("DB: Notification saved for user: {}. Message: {}", receiver.getUserId(), message);
 
-        // DB 트랜잭션이 성공적으로 커밋된 '이후에' SSE 메시지를 전송하도록 스케줄링합니다.
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                // SseEmitterService를 통해 알림 전송
                 sseEmitterService.sendToClient(receiver.getUserId(), "notification", NotificationDto.fromEntity(notification));
                 long unreadCount = getUnreadNotificationCount(receiver.getUserId());
                 sseEmitterService.sendToClient(receiver.getUserId(), "unreadCount", String.valueOf(unreadCount));
@@ -58,19 +56,13 @@ public class NotificationService {
         });
     }
 
-    /**
-     * 안 읽은 알림 수를 조회하는 DB 작업 전용 메소드입니다.
-     */
     @Transactional(readOnly = true)
     public long getUnreadNotificationCount(String userId) {
         UserEntity user = userRepository.findByUserId(userId);
         return notificationRepository.countByReceiverAndIsReadFalse(user);
     }
     
-    /**
-     * 30초마다 모든 클라이언트에게 연결 유지를 위한 더미 이벤트를 보냅니다.
-     */
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 15000)
     public void sendHeartbeat() {
         sseEmitterService.getEmitters().forEach((userId, emitter) -> {
             sseEmitterService.sendToClient(userId, "heartbeat", "ping");
@@ -91,11 +83,29 @@ public class NotificationService {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 알림입니다."));
         notification.setRead(true);
+        
+        // [✅ 추가] 단일 읽음 처리 후에도 unreadCount를 다시 보내주면 더 안정적입니다.
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                String userId = notification.getReceiver().getUserId();
+                long unreadCount = getUnreadNotificationCount(userId);
+                sseEmitterService.sendToClient(userId, "unreadCount", String.valueOf(unreadCount));
+            }
+        });
     }
 
     @Transactional
     public void readAllNotifications(String userId) {
         UserEntity user = userRepository.findByUserId(userId);
         notificationRepository.markAllAsReadByUser(user);
+        
+        // [✅ 핵심 수정] '모두 읽음' 처리 후, 변경된 unreadCount(0)를 클라이언트에 전송합니다.
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                sseEmitterService.sendToClient(userId, "unreadCount", "0");
+            }
+        });
     }
 }

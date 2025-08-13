@@ -2,7 +2,7 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>운송중인 화물 - The 채움+</title>
+    <title>운송중인화물 - The 채움+</title>
     <link rel="stylesheet" th:href="@{/css/base.css}">
     <link rel="stylesheet" th:href="@{/css/layout.css}">
     <link rel="stylesheet" th:href="@{/css/components.css}">
@@ -17,7 +17,7 @@
         <section class="content">
             <div id="view-container">
                 <div id="list-view">
-                    <h2 class="page-title">운송중인 화물</h2>
+                    <h2 class="page-title">운송중인화물</h2>
                     <div class="controls-bar">
                         <div class="filter-group">
                             <a th:href="@{/cus/tracking(status=null, itemName=${itemName})}" class="btn" th:classappend="${status == null} ? 'is-active'">전체</a>
