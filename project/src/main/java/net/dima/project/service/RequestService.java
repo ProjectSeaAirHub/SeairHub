@@ -55,6 +55,7 @@ public class RequestService {
         Specification<RequestEntity> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             LocalDateTime now = LocalDateTime.now();
+
             if (excludeClosed) {
                 predicates.add(cb.equal(root.get("status"), RequestStatus.OPEN));
                 predicates.add(cb.greaterThan(root.get("deadline"), now));
@@ -62,13 +63,28 @@ public class RequestService {
             if (tradeType != null && !tradeType.isEmpty()) {
                 predicates.add(cb.equal(root.get("tradeType"), tradeType));
             }
-            // ... (다른 필터 조건들)
+            if (transportType != null && !transportType.isEmpty()) {
+                predicates.add(cb.equal(root.get("transportType"), transportType));
+            }
+            if (itemName != null && !itemName.isBlank()) {
+                Join<RequestEntity, CargoEntity> cargoJoin = root.join("cargo");
+                predicates.add(cb.like(cargoJoin.get("itemName"), "%" + itemName + "%"));
+            }
+
+            // --- [✅ 바로 이 부분이 수정/추가된 핵심 코드입니다] ---
+            if (departurePort != null && !departurePort.isEmpty()) {
+                predicates.add(cb.equal(root.get("departurePort"), departurePort));
+            }
+            if (arrivalPort != null && !arrivalPort.isEmpty()) {
+                predicates.add(cb.equal(root.get("arrivalPort"), arrivalPort));
+            }
+            // --- [✅ 여기까지 수정/추가] ---
+
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 
         Page<RequestEntity> requestPage = requestRepository.findAll(spec, pageable);
         
-        // 🚀 성능 개선: 현재 페이지에 표시될 요청들에 대해서만 내가 제안했는지 확인
         List<RequestEntity> requestsOnPage = requestPage.getContent();
         if (requestsOnPage.isEmpty()) {
             return requestPage.map(req -> RequestCardDto.fromEntity(req, false));
@@ -210,6 +226,13 @@ public class RequestService {
                 .sourceOffer(null)
                 .build();
         requestRepository.save(newRequest);
+        
+        // --- [✅ 여기부터 추가] ---
+        // 이벤트에 담아 보낼 DTO 생성 (hasMyOffer는 false)
+        RequestCardDto dtoForEvent = RequestCardDto.fromEntity(newRequest, false);
+        // 이벤트 발행
+        eventPublisher.publishEvent(new NotificationEvents.RequestCreatedEvent(this, dtoForEvent));
+        // --- [✅ 여기까지 추가] ---
     }
     
     @Transactional
@@ -236,6 +259,7 @@ public class RequestService {
         request.setStatus(RequestStatus.CLOSED);
         
         eventPublisher.publishEvent(new NotificationEvents.OfferConfirmedEvent(this, allOffers, winningOffer));
+        eventPublisher.publishEvent(new NotificationEvents.DealMadeEvent(this));
 
         if (!containerCargoRepository.existsByOffer_OfferId(winningOfferId)) {
             ContainerCargoEntity cargoInContainer = ContainerCargoEntity.builder()

@@ -2,6 +2,7 @@ package net.dima.project.entity;
 
 import lombok.Getter;
 import net.dima.project.entity.OfferEntity;
+import net.dima.project.dto.RequestCardDto; 
 import org.springframework.context.ApplicationEvent;
 import java.util.List;
 
@@ -47,6 +48,38 @@ public class NotificationEvents {
             super(source);
             this.container = container;
             this.message = message;
+        }
+    }
+    
+    /**
+     * 신규 화물 요청이 생성되었을 때 발행되는 이벤트
+     */
+    @Getter
+    public static class RequestCreatedEvent extends ApplicationEvent {
+        private final RequestCardDto requestCardDto;
+        public RequestCreatedEvent(Object source, RequestCardDto requestCardDto) {
+            super(source);
+            this.requestCardDto = requestCardDto;
+        }
+    }
+    
+    /**
+     * 신규 사용자가 가입(Join)했을 때 발행되는 이벤트
+     */
+    @Getter
+    public static class UserJoinedEvent extends ApplicationEvent {
+        public UserJoinedEvent(Object source) {
+            super(source);
+        }
+    }
+
+    /**
+     * 거래가 체결(Deal Made)되었을 때 (화주가 제안을 확정했을 때) 발행되는 이벤트
+     */
+    @Getter
+    public static class DealMadeEvent extends ApplicationEvent {
+        public DealMadeEvent(Object source) {
+            super(source);
         }
     }
 }

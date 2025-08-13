@@ -6,6 +6,12 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" th:href="@{/css/base.css}">
     <link rel="stylesheet" th:href="@{/css/pages/index.css}">
+    <style>
+        html, body {
+            overflow: auto !important; /* html과 body 모두에서 스크롤을 허용합니다. */
+            height: auto !important;    /* body의 고정 높이를 해제합니다. */
+        }
+    </style>
 </head>
 <body>
     <header class="main-header">

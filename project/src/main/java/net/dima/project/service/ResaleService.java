@@ -199,6 +199,7 @@ public class ResaleService {
         originalOffer.setStatus(OfferStatus.RESOLD);
         
         eventPublisher.publishEvent(new NotificationEvents.OfferConfirmedEvent(this, allBids, winningOffer));
+        eventPublisher.publishEvent(new NotificationEvents.DealMadeEvent(this));
         
         containerCargoRepository.findByOfferOfferId(originalOffer.getOfferId())
                 .ifPresent(containerCargoRepository::delete);

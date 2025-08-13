@@ -13,6 +13,8 @@ import net.dima.project.repository.UserRepository;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.util.UUID;
+import org.springframework.context.ApplicationEventPublisher; // ✅ import 추가
+import net.dima.project.entity.NotificationEvents;
 
 /**
  * 사용자 관련 비즈니스 로직을 처리하는 서비스 클래스
@@ -24,6 +26,7 @@ import java.util.UUID;
 public class UserService {
     private final UserRepository repository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
+    private final ApplicationEventPublisher eventPublisher;
 
     // [수정] application.properties에 정의된 파일 업로드 경로를 주입받음
     @Value("${file.upload-dir}")
@@ -81,6 +84,7 @@ public class UserService {
         UserEntity userEntity = UserEntity.toEntity(userDTO);
         repository.save(userEntity);
         log.info("사용자 DB 저장 완료. 아이디: {}", userEntity.getUserId());
+        eventPublisher.publishEvent(new NotificationEvents.UserJoinedEvent(this));
     }
 
     /**

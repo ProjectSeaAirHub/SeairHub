@@ -49,7 +49,7 @@ public class FwdController {
                              @RequestParam(name = "departurePort", required = false) String departurePort,
                              @RequestParam(name = "arrivalPort", required = false) String arrivalPort,
                              @RequestParam(name = "itemName", required = false) String itemName,
-                             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+                             @PageableDefault(size = 10, sort = {"createdAt"}, direction = Sort.Direction.DESC) Pageable pageable) {
 
         String userId = authentication.getName();
         Page<RequestCardDto> requestPage = requestService.getRequests(
