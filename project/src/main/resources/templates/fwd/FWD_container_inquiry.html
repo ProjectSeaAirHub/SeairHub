@@ -61,6 +61,18 @@
                                 <span class="label">컨테이너 번호:</span>
                                 <span class="value" th:text="${c.containerId}"></span>
                             </div>
+                            <div class="info-group route">
+                                <span class="label">경로:</span>
+                                <span class="value" th:text="${c.route}"></span>
+                            </div>
+                            <div class="info-group">
+                                <span class="label">ETD:</span>
+                                <span class="value" th:text="${c.sailingDate}"></span>
+                            </div>
+						    <div class="info-group">
+						        <span class="label">ETA:</span>
+						        <span class="value" th:text="${c.arrivalDate}"></span>
+						    </div>     
                             <div class="info-group">
                                 <span class="label">크기:</span>
                                 <span class="value" th:text="${c.size}"></span>
@@ -70,18 +82,8 @@
                                 <span class="value"
                                     th:text="${#numbers.formatDecimal(c.totalCapacity, 1, 2)} + ' CBM'"></span>
                             </div>
-                            <div class="info-group">
-                                <span class="label">ETD:</span>
-                                <span class="value" th:text="${c.sailingDate}"></span>
-                            </div>
-						    <div class="info-group">
-						        <span class="label">ETA:</span>
-						        <span class="value" th:text="${c.arrivalDate}"></span>
-						    </div>                            
-                            <div class="info-group route">
-                                <span class="label">경로:</span>
-                                <span class="value" th:text="${c.route}"></span>
-                            </div>
+                       
+
 
                             <div class="header-actions">
                                 <button th:if="${c.isDeletable}"
@@ -332,6 +334,30 @@
         </div>
     </div>
 </div>
+
+<template id="cargo-transfer-modal-template">
+    <div class="modal-wrapper" style="display:flex;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>화물 이동</h3>
+                <button class="btn-close">×</button>
+            </div>
+            <div class="modal-body">
+                <p><strong>이동할 화물:</strong> <span id="transfer-item-name"></span></p>
+                <p><strong>CBM:</strong> <span id="transfer-item-cbm"></span></p>
+                <hr style="margin: 1rem 0;">
+                <label for="target-container-select"><strong>이동할 컨테이너 선택:</strong></label>
+                <select id="target-container-select" class="form-input" style="margin-top: 0.5rem;">
+                    <option value="">선택하세요...</option>
+                    </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-cancel">취소</button>
+                <button class="btn btn-primary" id="btn-confirm-transfer">이동 확정</button>
+            </div>
+        </div>
+    </div>
+</template>
 
     <script th:src="@{/js/fwd_container_inquiry.js}"></script>
 

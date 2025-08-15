@@ -43,6 +43,10 @@ public class ContainerService {
     private final ChatService chatService;
 
     public List<ContainerStatusDto> getContainerStatuses(String currentUserId, Sort sort) {
+        if (sort == null) {
+            sort = Sort.by("containerId").ascending();
+        }
+    	
         UserEntity forwarder = userRepository.findByUserId(currentUserId);
         
         final String sortBy = sort.get().findFirst().map(Sort.Order::getProperty).orElse("containerId");
@@ -401,5 +405,65 @@ public class ContainerService {
         container.setStatus(ContainerStatus.SETTLED);
         eventPublisher.publishEvent(new NotificationEvents.ContainerStatusChangedEvent(this, container, "정산이 완료되었습니다."));
         chatService.closeChatRoomsForSettledContainer(container);
+    }
+    
+ // ContainerService.java
+
+    /**
+     * 특정 제안(화물)을 한 컨테이너에서 다른 컨테이너로 이전합니다.
+     * @param offerId 이동할 화물에 해당하는 제안 ID
+     * @param toContainerId 화물이 들어갈 대상 컨테이너 ID
+     * @param currentUserId 현재 작업을 수행하는 사용자 ID
+     */
+    @Transactional
+    public void transferCargoToAnotherContainer(Long offerId, String toContainerId, String currentUserId) {
+        // 1. 필요한 엔티티 조회
+        OfferEntity offerToMove = offerRepository.findByIdWithDetails(offerId)
+                .orElseThrow(() -> new IllegalArgumentException("이전할 제안(화물)을 찾을 수 없습니다."));
+        ContainerEntity fromContainer = offerToMove.getContainer();
+        ContainerEntity toContainer = containerRepository.findById(toContainerId)
+                .orElseThrow(() -> new IllegalArgumentException("대상 컨테이너를 찾을 수 없습니다."));
+        UserEntity forwarder = userRepository.findByUserId(currentUserId);
+
+        // 2. 핵심 유효성 검사
+        if (!fromContainer.getForwarder().getUserSeq().equals(forwarder.getUserSeq()) ||
+            !toContainer.getForwarder().getUserSeq().equals(forwarder.getUserSeq())) {
+            throw new SecurityException("자신의 컨테이너 간에만 화물을 옮길 수 있습니다.");
+        }
+        if (fromContainer.getStatus() != ContainerStatus.SCHEDULED && fromContainer.getStatus() != ContainerStatus.CONFIRMED) {
+            throw new IllegalStateException("이미 운송이 시작된 컨테이너의 화물은 옮길 수 없습니다.");
+        }
+        if (toContainer.getStatus() != ContainerStatus.SCHEDULED) {
+            throw new IllegalStateException("'운송 예정' 상태의 컨테이너로만 화물을 옮길 수 있습니다.");
+        }
+        if (!fromContainer.getDeparturePort().equals(toContainer.getDeparturePort()) ||
+            !fromContainer.getArrivalPort().equals(toContainer.getArrivalPort())) {
+            throw new IllegalArgumentException("경로가 동일한 컨테이너로만 옮길 수 있습니다.");
+        }
+
+        double requiredCbm = offerToMove.getRequest().getCargo().getTotalCbm();
+        double availableCbmInToContainer = getContainerStatuses(currentUserId, null).stream()
+            .filter(c -> c.getContainerId().equals(toContainerId))
+            .findFirst()
+            .map(ContainerStatusDto::getAvailableCbm)
+            .orElse(0.0);
+
+        if (availableCbmInToContainer < requiredCbm) {
+            throw new IllegalArgumentException("대상 컨테이너의 잔여 용량이 부족합니다.");
+        }
+        
+        // [✅ 핵심 추가] ETA(도착 예정일)가 기존보다 늦어지는지 확인
+        if (toContainer.getEta().isAfter(fromContainer.getEta())) {
+            throw new IllegalArgumentException("기존보다 도착일이 늦어지는 컨테이너로는 이동할 수 없습니다.");
+        }
+
+        // 3. 데이터베이스 업데이트
+        offerToMove.setContainer(toContainer);
+        offerRepository.save(offerToMove); // 변경 사항 저장
+
+        containerCargoRepository.findByOfferOfferId(offerId).ifPresent(cargo -> {
+            cargo.setContainer(toContainer);
+            containerCargoRepository.save(cargo); // 변경 사항 저장
+        });
     }
 }

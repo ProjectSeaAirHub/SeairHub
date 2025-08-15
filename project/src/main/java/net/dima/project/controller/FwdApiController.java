@@ -296,4 +296,20 @@ public class FwdApiController {
         }
     }
     
+    @PostMapping("/cargo-transfer")
+    public ResponseEntity<String> transferCargo(@RequestBody Map<String, String> payload, Authentication authentication) {
+        try {
+            Long offerId = Long.parseLong(payload.get("offerId"));
+            String toContainerId = payload.get("toContainerId");
+            String userId = authentication.getName();
+            
+            containerService.transferCargoToAnotherContainer(offerId, toContainerId, userId);
+            
+            return ResponseEntity.ok("화물이 성공적으로 이전되었습니다.");
+        } catch (Exception e) {
+            log.error("화물 이동 중 오류 발생: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    
 }
