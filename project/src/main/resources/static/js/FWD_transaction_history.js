@@ -93,13 +93,14 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const activeFilter = filterGroup.querySelector('.is-active').dataset.filter;
         let totalKRW = 0;
         let totalUSD = 0;
-        let detailsHtml = '<table class="details-table" style="width:100%; border-collapse: collapse;"><thead><tr style="border-bottom: 1px solid #dee2e6;"><th style="padding: 8px; text-align: left;">품명</th><th style="padding: 8px; text-align: left;">경로</th><th style="padding: 8px; text-align: right;">금액</th></tr></thead><tbody>';
+        // 모달 테이블 헤더에 '거래일' 추가
+        let detailsHtml = '<table class="details-table" style="width:100%; border-collapse: collapse;"><thead><tr style="border-bottom: 1px solid #dee2e6;"><th style="padding: 8px; text-align: left;">거래일</th><th style="padding: 8px; text-align: left;">품명</th><th style="padding: 8px; text-align: left;">경로</th><th style="padding: 8px; text-align: right;">금액</th></tr></thead><tbody>';
 
         rows.forEach(row => {
             const cells = row.querySelectorAll('td');
+            const transactionDate = cells[0].textContent;
             const type = cells[1].textContent;
             const route = cells[2].textContent;
             const itemName = cells[3].textContent;
@@ -108,24 +109,35 @@ document.addEventListener('DOMContentLoaded', () => {
             const [amountStr, currency] = priceText.split(' ');
             const amount = parseFloat(amountStr.replace(/,/g, ''));
             
-            // '구매'일 경우 비용이므로 음수로 계산합니다. '판매'는 양수(수익)입니다.
-            let displayAmount = (type === '구매') ? -amount : amount;
+            let amountHtml;
+            let signedAmount = amount;
+
+            if (type === '구매') {
+                amountHtml = `<span style="color: blue;">-${amount.toLocaleString()} ${currency}</span>`;
+                signedAmount = -amount;
+            } else { // 판매
+                amountHtml = `<span style="color: red;">+${amount.toLocaleString()} ${currency}</span>`;
+            }
             
-            if (currency === 'KRW') totalKRW += displayAmount;
-            if (currency === 'USD') totalUSD += displayAmount;
+            if (currency === 'KRW') totalKRW += signedAmount;
+            if (currency === 'USD') totalUSD += signedAmount;
             
-            detailsHtml += `<tr style="border-bottom: 1px solid #f1f3f5;"><td style="padding: 8px;">${itemName}</td><td style="padding: 8px;">${route}</td><td style="padding: 8px; text-align: right;">${displayAmount.toLocaleString()} ${currency}</td></tr>`;
+            // 모달 테이블 행에 '거래일' 데이터 추가
+            detailsHtml += `<tr style="border-bottom: 1px solid #f1f3f5;"><td style="padding: 8px;">${transactionDate}</td><td style="padding: 8px;">${itemName}</td><td style="padding: 8px;">${route}</td><td style="padding: 8px; text-align: right;">${amountHtml}</td></tr>`;
         });
 
         detailsHtml += '</tbody></table>';
 
-        // [✅ 핵심 수정 3] 수익(양수)은 파란색, 비용(음수)은 빨간색으로 표시하도록 색상 로직을 반대로 변경합니다.
+        // 최종 합계에 색상과 부호(+/-) 적용
         const totalColorKRW = totalKRW >= 0 ? 'color: red;' : 'color: blue;';
+        const signKRW = totalKRW >= 0 ? '+' : '';
+        
         const totalColorUSD = totalUSD >= 0 ? 'color: red;' : 'color: blue;';
+        const signUSD = totalUSD >= 0 ? '+' : '';
         
         let summaryHtml = '<hr style="margin: 20px 0;"><h4 style="text-align: right;">합계</h4>';
-        if (Math.abs(totalKRW) > 0) summaryHtml += `<p style="text-align: right; font-size: 1.2em; font-weight: bold; ${totalColorKRW}">${totalKRW.toLocaleString()} KRW</p>`;
-        if (Math.abs(totalUSD) > 0) summaryHtml += `<p style="text-align: right; font-size: 1.2em; font-weight: bold; ${totalColorUSD}">${totalUSD.toLocaleString()} USD</p>`;
+        if (Math.abs(totalKRW) > 0) summaryHtml += `<p style="text-align: right; font-size: 1.2em; font-weight: bold; ${totalColorKRW}">${signKRW}${totalKRW.toLocaleString()} KRW</p>`;
+        if (Math.abs(totalUSD) > 0) summaryHtml += `<p style="text-align: right; font-size: 1.2em; font-weight: bold; ${totalColorUSD}">${signUSD}${totalUSD.toLocaleString()} USD</p>`;
         
         summaryModalTitle.textContent = `매출합계 (${startDateInput.value} ~ ${endDateInput.value})`;
         summaryModalBody.innerHTML = detailsHtml + summaryHtml;

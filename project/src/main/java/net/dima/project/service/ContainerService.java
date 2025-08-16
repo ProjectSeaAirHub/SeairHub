@@ -377,6 +377,7 @@ public class ContainerService {
             throw new IllegalStateException("'선적완료' 상태의 컨테이너만 운송완료 처리할 수 있습니다.");
         }
         container.setStatus(ContainerStatus.COMPLETED);
+        container.setCompletedAt(LocalDateTime.now()); // 운송완료 시간만 기록합니다.
         
         List<OfferEntity> offersToUpdate = offerRepository.findAllByContainer(container);
         for (OfferEntity offer : offersToUpdate) {

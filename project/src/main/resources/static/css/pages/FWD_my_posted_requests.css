@@ -353,3 +353,9 @@
     border-bottom-right-radius: 0;
 }
 
+/* '입찰 현황 보기' 버튼에 primary 색상 적용 */
+.request-card .actions-open .btn-details {
+    background-color: var(--base-color);
+    color: white;
+    border-color: var(--primary-color);
+}

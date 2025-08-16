@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "container")
@@ -48,5 +49,8 @@ public class ContainerEntity {
     @Enumerated(EnumType.STRING) // [✅ 수정] Enum 타입을 DB에 문자열로 저장
     @Column(nullable = false)
     private ContainerStatus status; // [✅ 수정] String -> ContainerStatus
+    
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
     
 }
