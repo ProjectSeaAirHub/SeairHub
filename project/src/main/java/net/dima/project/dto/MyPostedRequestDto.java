@@ -1,7 +1,9 @@
+// [✅ /dto/MyPostedRequestDto.java 파일 전체를 이 최종 코드로 교체해주세요]
 package net.dima.project.dto;
 
 import lombok.Builder;
 import lombok.Data;
+import net.dima.project.entity.ContainerStatus;
 import net.dima.project.entity.OfferEntity;
 import net.dima.project.entity.OfferStatus;
 import net.dima.project.entity.RequestEntity;
@@ -18,18 +20,78 @@ public class MyPostedRequestDto {
     private Double cbm;
     private String deadline;
     private long bidderCount;
-    private String status; // [✅ 추가] 요청의 현재 상태
-    private String winningBidderCompanyName; // [✅ 추가] 낙찰자 회사 이름
-    private String detailedStatus; // [✅ 추가] 낙찰 이후의 상세 진행 상태 (OfferStatus)
-    private String detailedStatusText; // [✅ 추가] 화면에 표시될 텍스트
- // ... MyPostedRequestDto 클래스 안에 아래 필드를 추가해주세요 ...
-    private String imoNumber; // [✅ 이 줄을 추가해주세요]
-    private LocalDateTime deadlineDateTime; // [✅ 이 필드를 추가해주세요]
-    private LocalDate desiredArrivalDate; // [✅ 이 줄을 추가해주세요]
+    private String status;
+    private String winningBidderCompanyName;
+    private String detailedStatus;
+    private String detailedStatusText;
+    private String imoNumber;
+    private LocalDateTime deadlineDateTime;
+    private LocalDate desiredArrivalDate;
 
-    // [✅ 수정] fromEntity 메서드 시그니처 변경
- // [✅ 기존의 fromEntity 메서드 2개를 아래 코드로 교체해주세요]
+    /**
+     * '입찰 진행 중'인 요청을 위한 DTO 생성자 (주로 화주, 재판매 포워더가 사용)
+     */
+    public static MyPostedRequestDto fromEntity(RequestEntity entity, long bidderCount) {
+        return MyPostedRequestDto.builder()
+                .requestId(entity.getRequestId())
+                .itemName(entity.getCargo().getItemName())
+                .cbm(entity.getCargo().getTotalCbm())
+                .deadline(entity.getDeadline().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                .deadlineDateTime(entity.getDeadline())
+                .bidderCount(bidderCount)
+                .status(entity.getStatus().name())
+                .detailedStatus("OPEN")
+                .detailedStatusText("입찰 진행 중")
+                .desiredArrivalDate(entity.getDesiredArrivalDate())
+                .build();
+    }
 
+    /**
+     * '낙찰' 이후의 요청 상태를 표현하기 위한 DTO 생성자 (주로 화주가 사용)
+     * @param entity 원본 요청
+     * @param directPartnerOffer 직접적인 계약 상대방(B 포워더)의 제안
+     * @param finalOfferInChain 실제 운송을 책임지는 최종 포워더(C 포워더)의 제안
+     */
+    public static MyPostedRequestDto fromEntity(RequestEntity entity, Optional<OfferEntity> directPartnerOffer, Optional<OfferEntity> finalOfferInChain) {
+
+        // 최종 운송사의 컨테이너 상태를 기준으로 정보 공개 여부 결정
+        boolean isConfirmed = finalOfferInChain.map(o -> o.getContainer().getStatus() != ContainerStatus.SCHEDULED).orElse(false);
+
+        String partnerName = isConfirmed ?
+                finalOfferInChain.map(offer -> offer.getForwarder().getCompanyName()).orElse("정보 없음") :
+                "포워더 정보 불러오는 중";
+
+        OfferStatus detailedStatus = finalOfferInChain.map(OfferEntity::getStatus).orElse(null);
+        String imoNumber = finalOfferInChain.map(o -> o.getContainer().getImoNumber()).orElse(null);
+
+        String statusText = "낙찰";
+        if (detailedStatus != null) {
+            switch (detailedStatus) {
+                case CONFIRMED: statusText = "컨테이너 확정"; break;
+                case SHIPPED: statusText = "선적완료"; break;
+                case COMPLETED: statusText = "운송완료"; break;
+                default: statusText = "낙찰"; // ACCEPTED, RESOLD 등
+            }
+        }
+
+        return MyPostedRequestDto.builder()
+                .requestId(entity.getRequestId())
+                .itemName(entity.getCargo().getItemName())
+                .cbm(entity.getCargo().getTotalCbm())
+                .deadline(entity.getDeadline().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                .deadlineDateTime(entity.getDeadline())
+                .status(entity.getStatus().name())
+                .winningBidderCompanyName(partnerName) // 최종 운송사 정보 또는 "선정 중"
+                .detailedStatus(detailedStatus != null ? detailedStatus.name() : "NONE")
+                .detailedStatusText(statusText)
+                .imoNumber(imoNumber)
+                .desiredArrivalDate(entity.getDesiredArrivalDate())
+                .build();
+    }
+
+    /**
+     * 재판매 요청 관리 페이지를 위한 DTO 생성자 (중간 포워더 B가 사용)
+     */
     public static MyPostedRequestDto fromEntity(RequestEntity entity, Optional<OfferEntity> winningOfferOpt) {
         
         String winningBidder = winningOfferOpt
@@ -44,65 +106,10 @@ public class MyPostedRequestDto {
                 case CONFIRMED: statusText = "컨테이너 확정"; break;
                 case SHIPPED: statusText = "선적완료"; break;
                 case COMPLETED: statusText = "운송완료"; break;
-                // ACCEPTED, RESOLD 등은 기본값 "낙찰"을 사용
             }
         }
-
-        return MyPostedRequestDto.builder()
-                .requestId(entity.getRequestId())
-                .itemName(entity.getCargo().getItemName())
-                .cbm(entity.getCargo().getTotalCbm())
-                .deadline(entity.getDeadline().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
-                .deadlineDateTime(entity.getDeadline()) // [✅ 추가]
-                .bidderCount(0) // 낙찰 후에는 입찰자 수가 중요하지 않으므로 0으로 통일
-                .status(entity.getStatus().name())
-                .winningBidderCompanyName(winningBidder)
-                .detailedStatus(offerStatus != null ? offerStatus.name() : "NONE")
-                .detailedStatusText(statusText)
-                .desiredArrivalDate(entity.getDesiredArrivalDate()) 
-                .build();
-    }
-
-    // [✅ fromEntity(RequestEntity entity, long bidderCount) 메서드를 수정]
-    public static MyPostedRequestDto fromEntity(RequestEntity entity, long bidderCount) {
-        return MyPostedRequestDto.builder()
-                .requestId(entity.getRequestId())
-                .itemName(entity.getCargo().getItemName())
-                .cbm(entity.getCargo().getTotalCbm())
-                .deadline(entity.getDeadline().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
-                .deadlineDateTime(entity.getDeadline()) // [✅ 추가]
-                .bidderCount(bidderCount)
-                .status(entity.getStatus().name())
-                .winningBidderCompanyName("")
-                .detailedStatus("OPEN")
-                .detailedStatusText("입찰 진행 중")
-                .desiredArrivalDate(entity.getDesiredArrivalDate())
-                .build();
-    }
-    
-    /**
-     * [✅ 추가] 화주 관점에서 '계약 파트너'와 '실제 운송사'가 다를 경우를 위한 DTO 생성자
-     * @param entity 원본 요청
-     * @param partnerOffer 계약 파트너(B포워더)의 제안
-     * @param statusProviderOffer 실제 운송 상태를 제공하는 최종 운송사(C포워더)의 제안
-     */
-    public static MyPostedRequestDto fromEntity(RequestEntity entity, Optional<OfferEntity> partnerOffer, Optional<OfferEntity> statusProviderOffer) {
-
-        String partnerName = partnerOffer
-                .map(offer -> offer.getForwarder().getCompanyName())
-                .orElse("낙찰자 정보 없음");
-
-        OfferStatus detailedStatus = statusProviderOffer.map(OfferEntity::getStatus).orElse(null);
-        String imoNumber = statusProviderOffer.map(o -> o.getContainer().getImoNumber()).orElse(null);
-
-        String statusText = "낙찰";
-        if (detailedStatus != null) {
-            switch (detailedStatus) {
-                case CONFIRMED: statusText = "컨테이너 확정"; break;
-                case SHIPPED: statusText = "선적완료"; break;
-                case COMPLETED: statusText = "운송완료"; break;
-            }
-        }
+        
+        String imoNumber = winningOfferOpt.map(o -> o.getContainer().getImoNumber()).orElse(null);
 
         return MyPostedRequestDto.builder()
                 .requestId(entity.getRequestId())
@@ -111,10 +118,10 @@ public class MyPostedRequestDto {
                 .deadline(entity.getDeadline().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
                 .deadlineDateTime(entity.getDeadline())
                 .status(entity.getStatus().name())
-                .winningBidderCompanyName(partnerName) // 계약 파트너는 B포워더
-                .detailedStatus(detailedStatus != null ? detailedStatus.name() : "NONE")
+                .winningBidderCompanyName(winningBidder)
+                .detailedStatus(offerStatus != null ? offerStatus.name() : "NONE")
                 .detailedStatusText(statusText)
-                .imoNumber(imoNumber) // IMO 번호와 운송 상태는 C포워더의 것
+                .imoNumber(imoNumber)
                 .desiredArrivalDate(entity.getDesiredArrivalDate())
                 .build();
     }

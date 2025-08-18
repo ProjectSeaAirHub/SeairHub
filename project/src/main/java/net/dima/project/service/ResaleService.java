@@ -36,8 +36,10 @@ public class ResaleService {
     private final UserRepository userRepository;
     private final ContainerCargoRepository containerCargoRepository;
     private final ApplicationEventPublisher eventPublisher;
-    private final ChatService chatService;
 
+    /**
+     * 특정 제안(Offer)을 재판매 시장에 내놓습니다. (기존과 동일)
+     */
     @Transactional
     public void createResaleRequest(Long offerId, String currentUserId) {
         OfferEntity originalOffer = offerRepository.findByIdWithDetails(offerId)
@@ -70,7 +72,10 @@ public class ResaleService {
                 .build();
         requestRepository.save(resaleRequest);
     }
-    
+
+    /**
+     * 재판매 요청을 취소하고 원래 상태로 되돌립니다. (기존과 동일)
+     */
     @Transactional
     public void cancelResaleRequest(Long requestId, String currentUserId) {
         RequestEntity resaleRequest = requestRepository.findRequestWithDetailsById(requestId)
@@ -100,6 +105,9 @@ public class ResaleService {
         resaleRequest.setStatus(RequestStatus.CLOSED);
     }
     
+    /**
+     * 포워더의 '재판매 관리' 페이지에 표시될 요청 목록을 조회합니다.
+     */
     @Transactional(readOnly = true)
     public Page<MyPostedRequestDto> getMyPostedRequests(String currentUserId, String status, Pageable pageable) {
         UserEntity requester = userRepository.findByUserId(currentUserId);
@@ -113,13 +121,12 @@ public class ResaleService {
                 .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
         Map<Long, OfferEntity> winningOffers = offerRepository.findWinningOffersForRequests(closedRequests).stream()
                 .collect(Collectors.toMap(offer -> offer.getRequest().getRequestId(), Function.identity()));
-        Map<Long, Optional<OfferEntity>> finalOffers = closedRequests.stream()
-                .collect(Collectors.toMap(RequestEntity::getRequestId, this::findFinalOffer));
 
         List<MyPostedRequestDto> dtoList = allMyResaleRequests.stream()
             .map(req -> {
-                Optional<OfferEntity> finalOfferOpt = finalOffers.get(req.getRequestId());
-                if (finalOfferOpt != null && finalOfferOpt.isPresent() && finalOfferOpt.get().getContainer().getStatus() == ContainerStatus.SETTLED) {
+                // 정산 완료된 건은 목록에서 제외
+                Optional<OfferEntity> finalOfferOpt = findFinalOffer(req);
+                if (finalOfferOpt.isPresent() && finalOfferOpt.get().getContainer().getStatus() == ContainerStatus.SETTLED) {
                     return null;
                 }
 
@@ -128,20 +135,16 @@ public class ResaleService {
                     return MyPostedRequestDto.fromEntity(req, bidderCount);
                 } else { // CLOSED
                     Optional<OfferEntity> winningOfferOpt = Optional.ofNullable(winningOffers.get(req.getRequestId()));
-                    
-                    // [✅ 핵심 수정] 마감된 요청인데 낙찰자가 없으면(즉, 기간만료로 자동취소된 건이면) 목록에서 제외합니다.
                     if (winningOfferOpt.isEmpty()) {
-                        return null;
+                        return null; // 마감되었으나 낙찰자 없는 건(기간만료 자동취소)은 제외
                     }
-                    
-                    MyPostedRequestDto dto = MyPostedRequestDto.fromEntity(req, winningOfferOpt);
-                    finalOfferOpt.ifPresent(finalOffer -> dto.setImoNumber(finalOffer.getContainer().getImoNumber()));
-                    return dto;
+                    return MyPostedRequestDto.fromEntity(req, winningOfferOpt);
                 }
             })
-            .filter(dto -> dto != null) // null로 반환된 항목(기간만료, 정산완료 건)을 최종적으로 걸러냅니다.
+            .filter(dto -> dto != null)
             .collect(Collectors.toList());
 
+        // 상태(status) 탭 필터링 로직
         List<MyPostedRequestDto> filteredList;
         if (status != null && !status.isEmpty()) {
             filteredList = dtoList.stream()
@@ -163,6 +166,9 @@ public class ResaleService {
         return new PageImpl<>(pageContent, pageable, filteredList.size());
     }
     
+    /**
+     * 특정 재판매 요청에 대한 입찰자 목록을 조회합니다. (기존과 동일)
+     */
     @Transactional(readOnly = true)
     public List<BidderDto> getBiddersForRequest(Long requestId, String currentUserId) {
         RequestEntity request = requestRepository.findById(requestId)
@@ -175,6 +181,9 @@ public class ResaleService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 재판매 요청에 대한 입찰을 확정(낙찰)합니다.
+     */
     @Transactional
     public void confirmBid(Long requestId, Long winningOfferId, String currentUserId) {
         RequestEntity resaleRequest = requestRepository.findRequestWithDetailsById(requestId)
@@ -192,6 +201,7 @@ public class ResaleService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("선택한 입찰이 존재하지 않습니다."));
 
+        // [로직 간소화] 상태 변경 및 이벤트 발행만 수행
         allBids.forEach(bid -> bid.setStatus(bid.equals(winningOffer) ? OfferStatus.ACCEPTED : OfferStatus.REJECTED));
         resaleRequest.setStatus(RequestStatus.CLOSED);
 
@@ -201,27 +211,31 @@ public class ResaleService {
         eventPublisher.publishEvent(new NotificationEvents.OfferConfirmedEvent(this, allBids, winningOffer));
         eventPublisher.publishEvent(new NotificationEvents.DealMadeEvent(this));
         
+        // 기존 화물-컨테이너 연결 정보 삭제
         containerCargoRepository.findByOfferOfferId(originalOffer.getOfferId())
                 .ifPresent(containerCargoRepository::delete);
         
+        // 새로운 낙찰 정보로 화물-컨테이너 연결 정보 생성
         containerCargoRepository.findByOfferOfferId(winningOffer.getOfferId()).orElseGet(() -> {
             ContainerCargoEntity newCargo = ContainerCargoEntity.builder()
                     .container(winningOffer.getContainer())
                     .offer(winningOffer)
                     .cbmLoaded(resaleRequest.getCargo().getTotalCbm())
                     .isExternal(false)
+                    .freightCost(winningOffer.getPrice())
+                    .freightCurrency(winningOffer.getCurrency())
                     .build();
             return containerCargoRepository.save(newCargo);
         });
     }
     
+    /**
+     * 재판매 체인을 추적하여 최종 운송 제안을 찾습니다. (RequestService의 것과 동일한 로직)
+     */
     private Optional<OfferEntity> findFinalOffer(RequestEntity request) {
         RequestEntity currentRequest = request;
         while (true) {
-            Optional<OfferEntity> winningOfferOpt = offerRepository.findAllByRequest(currentRequest)
-                    .stream()
-                    .filter(o -> o.getStatus() != OfferStatus.PENDING && o.getStatus() != OfferStatus.REJECTED)
-                    .findFirst();
+            Optional<OfferEntity> winningOfferOpt = offerRepository.findWinningOfferForRequest(currentRequest);
 
             if (winningOfferOpt.isPresent()) {
                 OfferEntity winningOffer = winningOfferOpt.get();

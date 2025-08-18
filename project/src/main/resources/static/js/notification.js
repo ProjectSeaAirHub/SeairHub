@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const maxRetries = 5;
     let throttleTimer = null;
 
-    // 쓰로틀링 함수: 과도한 호출을 방지합니다.
     const throttle = (callback, delay) => {
         return function () {
             if (!throttleTimer) {
@@ -32,21 +31,25 @@ document.addEventListener('DOMContentLoaded', () => {
             countElement.style.display = 'flex';
         } else {
             countElement.style.display = 'none';
-            // 알림 목록이 열려있을 때만 메시지 표시 함수 호출
             if (dropdown.style.display === 'block') {
                 showNoNotificationMessage();
             }
         }
     };
 
-    const addNotificationToList = (noti) => {
+    /**
+     * [✅ 핵심 수정 1] 알림 항목을 목록의 맨 위에 추가(prepend)하는 함수입니다.
+     */
+    const prependNotificationToList = (noti) => {
         const noNotiMsg = listElement.querySelector('.no-notifications');
-        if (noNotiMsg) noNotiMsg.remove();
+        if (noNotiMsg) noNotiMsg.remove(); // '알림 없음' 메시지가 있다면 제거
+        
         const li = document.createElement('li');
         li.dataset.id = noti.id;
         li.dataset.url = noti.url;
         li.innerHTML = `<div class="message">${noti.message}</div><div class="timestamp">${noti.createdAt}</div>`;
-        listElement.prepend(li);
+        
+        listElement.prepend(li); // 새 알림을 목록의 맨 위에 추가
     };
 
     const showNoNotificationMessage = () => {
@@ -63,13 +66,24 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/api/notifications');
             if (!response.ok) throw new Error('알림 목록 로딩 실패');
-            const notifications = await response.json();
+            
+            const notifications = await response.json(); // 서버로부터 최신순으로 정렬된 목록을 받음
             
             listElement.innerHTML = '';
             if (notifications.length === 0) {
                 showNoNotificationMessage();
             } else {
-                notifications.forEach(addNotificationToList);
+                /**
+                 * [✅ 핵심 수정 2] 서버에서 받은 최신순 목록을 그대로 화면에 표시합니다.
+                 * forEach와 appendChild를 사용하여 배열 순서 그대로 (최신순으로) li 요소를 추가합니다.
+                 */
+                notifications.forEach(noti => {
+                    const li = document.createElement('li');
+                    li.dataset.id = noti.id;
+                    li.dataset.url = noti.url;
+                    li.innerHTML = `<div class="message">${noti.message}</div><div class="timestamp">${noti.createdAt}</div>`;
+                    listElement.appendChild(li); // 목록의 맨 뒤에 추가
+                });
             }
             updateCountUI(notifications.length);
 
@@ -85,35 +99,28 @@ document.addEventListener('DOMContentLoaded', () => {
             retryCount = 0;
         };
 
-        // --- SSE 이벤트 중앙 처리 ---
-
-        // 1. 읽지 않은 알림 개수 업데이트
         eventSource.addEventListener('unreadCount', (event) => {
             updateCountUI(event.data);
         });
 
-        // 2. 새로운 텍스트 알림 수신
-        eventSource.addEventListener('notification', async (event) => {
+        /**
+         * [✅ 핵심 수정 3] 새로운 'notification' 이벤트 수신 시, 전체 목록을 다시 불러오는 대신
+         * 전달받은 새 알림 데이터만 목록의 맨 위에 바로 추가하여 훨씬 효율적으로 동작합니다.
+         */
+        eventSource.addEventListener('notification', (event) => {
              try {
-                const response = await fetch('/api/notifications');
-                const notifications = await response.json();
-                listElement.innerHTML = '';
-                if (notifications.length > 0) {
-                    notifications.forEach(addNotificationToList);
-                } else {
-                    showNoNotificationMessage();
-                }
+                const newNotification = JSON.parse(event.data);
+                prependNotificationToList(newNotification); // 새 알림을 맨 위에 추가하는 함수 호출
              } catch (error) {
-                 console.error("새 알림 수신 후 목록 갱신 실패:", error);
+                 console.error("새 알림 처리 중 오류 발생:", error);
              }
         });
 
-        // 3. 읽지 않은 채팅 메시지 수신
+        // --- 이하 다른 SSE 이벤트 리스너들은 기존과 동일 ---
         eventSource.addEventListener('unreadChat', (event) => {
             document.dispatchEvent(new CustomEvent('sse:unreadChat', { detail: event.data }));
         });
 
-        // 4. 신규 견적 요청 실시간 업데이트
         eventSource.addEventListener('new_request', (event) => {
             const requestList = document.querySelector('.request-list');
             if (!requestList) return;
@@ -135,7 +142,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // 5. 운송 상태 실시간 업데이트
         eventSource.addEventListener('shipment_update', (event) => {
             const { requestId, detailedStatus } = JSON.parse(event.data);
             const articleElement = document.querySelector(`article[data-request-id='${requestId}']`);
@@ -157,66 +163,47 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 		
-		// [✅ 여기부터 새로운 기능 추가]
-		// 6. 포워더 화면: 실시간 제안 상태(낙찰/유찰) 업데이트
 		eventSource.addEventListener('offer_status_update', (event) => {
 		    const { offerId, status, statusText } = JSON.parse(event.data);
-		    
-		    // '나의제안조회' 페이지에 해당 offerId를 가진 요소가 있는지 확인
 		    const detailsButton = document.querySelector(`.btn-details[data-offer-id='${offerId}']`);
 		    if (!detailsButton) return;
 
 		    const offerCard = detailsButton.closest('.offer-card');
 		    if (!offerCard) return;
 
-		    // 상태 배지(Status Badge) 요소 찾기
 		    const statusBadge = offerCard.querySelector('.status-badge');
 		    if (statusBadge) {
-		        // 텍스트 변경
 		        statusBadge.textContent = statusText;
-		        
-		        // CSS 클래스 변경 (기존 상태 클래스는 모두 지우고 새 클래스 추가)
-		        statusBadge.className = 'status-badge'; // 기본 클래스만 남기고 초기화
-		        statusBadge.classList.add(status.toLowerCase()); // 새 상태 클래스 추가 (예: 'accepted')
+		        statusBadge.className = 'status-badge';
+		        statusBadge.classList.add(status.toLowerCase());
 		    }
 
-		    // '재판매하기' 또는 '제안취소' 버튼 등 액션 버튼 영역 처리
 		    const actionsContainer = offerCard.querySelector('.actions');
 		    if (actionsContainer) {
-		        // '수락' 상태가 되면 '재판매하기' 버튼을 보여주고, '제안취소' 버튼은 숨김
+		        const cancelButton = actionsContainer.querySelector('.btn-cancel-offer');
+		        if (cancelButton) cancelButton.remove();
+
 		        if (status === 'ACCEPTED') {
-		            const resellButton = `<button class="btn btn-sm btn-resale" data-offer-id="${offerId}">재판매하기</button>`;
-		            actionsContainer.innerHTML = resellButton + actionsContainer.innerHTML; // 상세보기 버튼 앞에 추가
-		            
-		            const cancelButton = actionsContainer.querySelector('.btn-cancel-offer');
-		            if (cancelButton) cancelButton.remove();
+		            const resellButtonHTML = `<button class="btn btn-sm btn-resale" data-offer-id="${offerId}">재판매하기</button>`;
+		            if (statusBadge) {
+		                statusBadge.insertAdjacentHTML('afterend', resellButtonHTML);
+		            }
 		        } 
-		        // '거절' 상태가 되면 모든 액션 버튼을 제거
 		        else if (status === 'REJECTED') {
 		            const resellButton = actionsContainer.querySelector('.btn-resale');
-		            const cancelButton = actionsContainer.querySelector('.btn-cancel-offer');
 		            if (resellButton) resellButton.remove();
-		            if (cancelButton) cancelButton.remove();
 		        }
 		    }
 		});
 		
-		// [✅ 여기부터 새로운 기능 추가]
-		// 7. 화주 화면: 실시간 제안 건수 업데이트
 		eventSource.addEventListener('bid_count_update', (event) => {
 		    const { requestId, bidderCount } = JSON.parse(event.data);
-		    
-		    // 현재 페이지에 해당 requestId를 가진 요소가 있는지 확인
 		    const articleElement = document.querySelector(`article[data-request-id='${requestId}']`);
-		    if (!articleElement) return; // 없으면 아무것도 안 함
+		    if (!articleElement) return;
 
-		    // 제안 건수를 표시하는 span 요소를 찾음
 		    const bidderCountElement = articleElement.querySelector('.bidder-count');
 		    if (bidderCountElement) {
-		        // 텍스트를 새로운 건수로 변경
 		        bidderCountElement.textContent = `제안 ${bidderCount}건 도착`;
-		        
-		        // (선택사항) 시각적 효과 추가
 		        bidderCountElement.style.transition = 'transform 0.2s ease';
 		        bidderCountElement.style.transform = 'scale(1.2)';
 		        setTimeout(() => {
@@ -225,15 +212,12 @@ document.addEventListener('DOMContentLoaded', () => {
 		    }
 		});
 		
-		// 8. 관리자 대시보드: 실시간 지표 업데이트
 		eventSource.addEventListener('dashboard_update', (event) => {
-		    // 현재 페이지가 대시보드인지 확인 (고유한 ID를 가진 요소로 판단)
 		    const dashboardCard = document.querySelector('.dashboard-grid');
 		    if (!dashboardCard) return;
 
 		    const metrics = JSON.parse(event.data);
 		    
-		    // 각 ID에 맞는 요소를 찾아 텍스트를 업데이트
 		    document.getElementById('today-requests').textContent = metrics.todayRequests;
 		    document.getElementById('today-deals').textContent = metrics.todayDeals;
 		    document.getElementById('total-fwd-users').textContent = metrics.totalFwdUsers;
@@ -254,7 +238,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     };
 
-    // --- 이하 UI 이벤트 리스너 (기존과 동일) ---
     notiBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
@@ -291,6 +274,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    const throttledInit = throttle(initializeNotifications, 3000);
+    const throttledInit = throttle(initializeNotifications, 1000);
     throttledInit();
 });

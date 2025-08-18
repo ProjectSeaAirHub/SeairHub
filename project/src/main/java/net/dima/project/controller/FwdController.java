@@ -126,7 +126,7 @@ public class FwdController {
     @GetMapping("/container-inquiry")
     public String fwdContainerInquiry(Model model, Authentication authentication,
                                       // [✅ Pageable 파라미터 추가, 기본 정렬은 등록일순(id)으로 설정]
-                                      @PageableDefault(size = 10, sort = "containerId", direction = Sort.Direction.ASC) Pageable pageable) {
+                                      @PageableDefault(size = 10, sort = "containerId", direction = Sort.Direction.DESC) Pageable pageable) {
         String userId = authentication.getName();
         
         // [✅ 서비스 호출 시 Sort 객체 전달]

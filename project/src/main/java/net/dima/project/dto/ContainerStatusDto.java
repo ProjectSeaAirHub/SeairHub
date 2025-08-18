@@ -1,3 +1,4 @@
+// [✅ /dto/ContainerStatusDto.java 파일 전체를 이 최종 코드로 교체해주세요]
 package net.dima.project.dto;
 
 import lombok.Builder;
@@ -13,10 +14,12 @@ public class ContainerStatusDto {
     // 컨테이너 기본 정보
     private String containerId;
     private String size;
-    private Double totalCapacity; // 총 용량
-    private String sailingDate;   // 출항일
+    private Double totalCapacity;
+    private String sailingDate;
     private String arrivalDate;
-    private String route;         // 경로
+    private String route;
+    private String departurePort; // [✅ 추가] 출발항 정보를 담을 필드
+    private String arrivalPort;   // [✅ 추가] 도착항 정보를 담을 필드
 
     // 계산된 CBM 정보
     private Double confirmedCbm;
@@ -26,10 +29,9 @@ public class ContainerStatusDto {
     
     
     private ContainerStatus status;
-    private boolean isDeletable;   // [✅ 추가] 삭제 가능 여부
-    private boolean isConfirmable; // [✅ 추가] 확정 가능 여부
+    private boolean isDeletable;
+    private boolean isConfirmable;
 
-    // 프로그레스 바를 위한 퍼센트 계산 메서드
     public int getConfirmedPercent() {
         if (totalCapacity == 0) return 0;
         return (int) Math.round((confirmedCbm / totalCapacity) * 100);
@@ -45,7 +47,6 @@ public class ContainerStatusDto {
         return (int) Math.round((biddingCbm / totalCapacity) * 100);
     }
     
-    // Entity를 DTO로 변환하는 정적 헬퍼 메서드
     public static ContainerStatusDto fromEntity(ContainerEntity entity) {
         return ContainerStatusDto.builder()
                 .containerId(entity.getContainerId())
@@ -54,6 +55,8 @@ public class ContainerStatusDto {
                 .sailingDate(entity.getEtd().format(DateTimeFormatter.ofPattern("yyyy. M. d.")))
                 .arrivalDate(entity.getEta().format(DateTimeFormatter.ofPattern("yyyy. M. d.")))
                 .route(entity.getDeparturePort() + " → " + entity.getArrivalPort())
+                .departurePort(entity.getDeparturePort()) // [✅ 추가] 출발항 정보 설정
+                .arrivalPort(entity.getArrivalPort())   // [✅ 추가] 도착항 정보 설정
                 .build();
     }
 }

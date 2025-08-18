@@ -43,9 +43,10 @@ public class RequestService {
     private final CargoRepository cargoRepository;
     private final ContainerCargoRepository containerCargoRepository;
     private final ApplicationEventPublisher eventPublisher;
-    private final ChatService chatService;
 
-    // (getRequests, createNewRequest, confirmShipperOffer, findFinalOffer 메소드는 이전과 동일)
+    /**
+     * 포워더의 '견적요청조회' 페이지에 표시될 모든 공개 요청 목록을 조회합니다. (기존과 동일)
+     */
     public Page<RequestCardDto> getRequests(
             boolean excludeClosed,
             String tradeType, String transportType,
@@ -70,15 +71,12 @@ public class RequestService {
                 Join<RequestEntity, CargoEntity> cargoJoin = root.join("cargo");
                 predicates.add(cb.like(cargoJoin.get("itemName"), "%" + itemName + "%"));
             }
-
-            // --- [✅ 바로 이 부분이 수정/추가된 핵심 코드입니다] ---
             if (departurePort != null && !departurePort.isEmpty()) {
                 predicates.add(cb.equal(root.get("departurePort"), departurePort));
             }
             if (arrivalPort != null && !arrivalPort.isEmpty()) {
                 predicates.add(cb.equal(root.get("arrivalPort"), arrivalPort));
             }
-            // --- [✅ 여기까지 수정/추가] ---
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
@@ -98,6 +96,9 @@ public class RequestService {
         });
     }
 
+    /**
+     * 화주의 '나의요청 관리' 및 '운송중인 화물' 페이지에 표시될 요청 목록을 조회합니다.
+     */
     @Transactional(readOnly = true)
     public Page<MyPostedRequestDto> getRequestsForShipper(String currentUserId, String status, boolean excludeClosed, String itemName, Pageable pageable) {
         UserEntity shipper = userRepository.findByUserId(currentUserId);
@@ -113,12 +114,9 @@ public class RequestService {
                 predicates.add(cb.like(cargoJoin.get("itemName"), "%" + itemName + "%"));
             }
 
-            // '운송중인 화물' 탭 (status="CLOSED" 또는 status=null)
             if (status == null || "CLOSED".equalsIgnoreCase(status)) {
                 predicates.add(cb.equal(root.get("status"), RequestStatus.CLOSED));
-            }
-            // '나의요청 관리' 탭 (status="OPEN")
-            else if ("OPEN".equalsIgnoreCase(status)) {
+            } else if ("OPEN".equalsIgnoreCase(status)) {
                 predicates.add(cb.equal(root.get("status"), RequestStatus.OPEN));
                 if (excludeClosed) {
                     predicates.add(cb.greaterThan(root.get("deadline"), now));
@@ -132,75 +130,74 @@ public class RequestService {
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 
+        // DB에서 페이징된 요청 목록을 가져옵니다.
         Page<RequestEntity> requestPage = requestRepository.findAll(spec, pageable);
         List<RequestEntity> requestsOnPage = requestPage.getContent();
 
-        List<RequestEntity> allRequests = requestRepository.findAll(spec, pageable.getSort());
-
-        List<RequestEntity> openRequests = allRequests.stream().filter(r -> r.getStatus() == RequestStatus.OPEN).collect(Collectors.toList());
-        List<RequestEntity> closedRequests = allRequests.stream().filter(r -> r.getStatus() == RequestStatus.CLOSED).collect(Collectors.toList());
-
-        Map<Long, Long> bidderCounts = offerRepository.countOffersByRequestIn(openRequests).stream()
+        // N+1 문제를 방지하기 위해 관련 데이터를 한 번에 조회합니다.
+        Map<Long, Long> bidderCounts = offerRepository.countOffersByRequestIn(requestsOnPage).stream()
                 .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
-        Map<Long, OfferEntity> winningOffers = offerRepository.findWinningOffersForRequests(closedRequests).stream()
+        Map<Long, OfferEntity> winningOffers = offerRepository.findWinningOffersForRequests(requestsOnPage).stream()
                 .collect(Collectors.toMap(offer -> offer.getRequest().getRequestId(), Function.identity(), (o1, o2) -> o1));
-        Map<Long, Optional<OfferEntity>> finalOffers = closedRequests.stream()
+        Map<Long, Optional<OfferEntity>> finalOffers = requestsOnPage.stream()
                 .collect(Collectors.toMap(RequestEntity::getRequestId, this::findFinalOffer));
 
-        // 2. '정산완료' 건을 제외한 최종 DTO 리스트를 만듭니다.
-        List<MyPostedRequestDto> fullDtoList = allRequests.stream()
+        // 조회된 데이터를 새로운 DTO 생성 로직에 맞춰 가공합니다.
+        List<MyPostedRequestDto> dtoList = requestsOnPage.stream()
             .map(req -> {
                 if (req.getStatus() == RequestStatus.OPEN) {
                     return MyPostedRequestDto.fromEntity(req, bidderCounts.getOrDefault(req.getRequestId(), 0L));
                 } else { // CLOSED
                     Optional<OfferEntity> directWinningOfferOpt = Optional.ofNullable(winningOffers.get(req.getRequestId()));
                     Optional<OfferEntity> finalOfferInChainOpt = finalOffers.getOrDefault(req.getRequestId(), Optional.empty());
-
+                    
+                    // 정산 완료된 건은 목록에서 제외합니다.
                     if (finalOfferInChainOpt.map(o -> o.getContainer().getStatus() == ContainerStatus.SETTLED).orElse(false)) {
-                        return null; 
+                        return null;
                     }
                     return MyPostedRequestDto.fromEntity(req, directWinningOfferOpt, finalOfferInChainOpt);
                 }
             })
             .filter(dto -> dto != null)
             .collect(Collectors.toList());
-
-        // 3. 필터링이 완료된 최종 리스트를 가지고 수동으로 페이지네이션을 적용합니다.
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), fullDtoList.size());
         
-        List<MyPostedRequestDto> pageContent = (start > end) ? List.of() : fullDtoList.subList(start, end);
-        
-        return new PageImpl<>(pageContent, pageable, fullDtoList.size());
+        return new PageImpl<>(dtoList, pageable, requestPage.getTotalElements());
     }
     
+    /**
+     * 재판매 체인을 재귀적으로 추적하여 최종 운송을 책임지는 제안(Offer)을 찾습니다.
+     * @param request 시작 요청
+     * @return 최종 운송사의 제안 (Optional)
+     */
     private Optional<OfferEntity> findFinalOffer(RequestEntity request) {
         RequestEntity currentRequest = request;
         
         while (true) {
-            Optional<OfferEntity> winningOfferOpt = offerRepository.findAllByRequest(currentRequest)
-                    .stream()
-                    .filter(o -> o.getStatus() != OfferStatus.PENDING && o.getStatus() != OfferStatus.REJECTED)
-                    .findFirst();
+            // 현재 요청에서 '낙찰(ACCEPTED)' 또는 '재판매 완료(RESOLD)' 상태의 제안을 찾습니다.
+            Optional<OfferEntity> winningOfferOpt = offerRepository.findWinningOfferForRequest(currentRequest);
 
             if (winningOfferOpt.isPresent()) {
                 OfferEntity winningOffer = winningOfferOpt.get();
+                // 만약 이 제안이 다시 '재판매 완료' 상태라면, 다음 단계의 재판매 요청을 찾아 계속 추적합니다.
                 if (winningOffer.getStatus() == OfferStatus.RESOLD) {
                     List<RequestEntity> nextRequests = requestRepository.findBySourceOfferOrderedByCreatedAtDesc(winningOffer);
                     if (!nextRequests.isEmpty()) {
-                        currentRequest = nextRequests.get(0);
+                        currentRequest = nextRequests.get(0); // 가장 최신 재판매 요청으로 계속 탐색
                     } else {
-                        return winningOfferOpt;
+                        return winningOfferOpt; // 다음 재판매 요청이 없으면 현재 제안이 최종
                     }
                 } else {
-                    return winningOfferOpt;
+                    return winningOfferOpt; // '재판매 완료'가 아니면(ACCEPTED, CONFIRMED 등) 이 제안이 최종
                 }
             } else {
-                return Optional.empty();
+                return Optional.empty(); // 낙찰된 제안이 없으면 비어있는 결과 반환
             }
         }
     }
     
+    /**
+     * 화주가 새로운 운송 요청을 생성합니다. (기존과 거의 동일, 이벤트 발행 로직 유지)
+     */
     @Transactional
     public void createNewRequest(NewRequestDto dto, String currentUserId) {
         UserEntity requester = userRepository.findByUserId(currentUserId);
@@ -227,14 +224,13 @@ public class RequestService {
                 .build();
         requestRepository.save(newRequest);
         
-        // --- [✅ 여기부터 추가] ---
-        // 이벤트에 담아 보낼 DTO 생성 (hasMyOffer는 false)
         RequestCardDto dtoForEvent = RequestCardDto.fromEntity(newRequest, false);
-        // 이벤트 발행
         eventPublisher.publishEvent(new NotificationEvents.RequestCreatedEvent(this, dtoForEvent));
-        // --- [✅ 여기까지 추가] ---
     }
     
+    /**
+     * 화주가 포워더의 제안을 확정(낙찰)합니다.
+     */
     @Transactional
     public void confirmShipperOffer(Long requestId, Long winningOfferId, String currentUserId) {
         RequestEntity request = requestRepository.findById(requestId)
@@ -253,14 +249,18 @@ public class RequestService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 제안입니다."));
         
+        // [로직 간소화] 낙찰된 제안은 'ACCEPTED', 나머지는 'REJECTED'로 상태만 변경합니다.
         allOffers.forEach(offer -> {
             offer.setStatus(offer.equals(winningOffer) ? OfferStatus.ACCEPTED : OfferStatus.REJECTED);
         });
         request.setStatus(RequestStatus.CLOSED);
         
+        // [로직 간소화] 낙찰/유찰 알림 이벤트만 발행합니다. 채팅방 생성은 여기서 하지 않습니다.
         eventPublisher.publishEvent(new NotificationEvents.OfferConfirmedEvent(this, allOffers, winningOffer));
         eventPublisher.publishEvent(new NotificationEvents.DealMadeEvent(this));
 
+        // [로직 간소화] 화물을 컨테이너에 적재하는 로직은 '컨테이너 확정' 시점으로 이동될 것이므로 여기서는 삭제하거나 주석 처리할 수 있습니다.
+        // 아래 로직은 추후 ContainerService로 이동될 예정입니다.
         if (!containerCargoRepository.existsByOffer_OfferId(winningOfferId)) {
             ContainerCargoEntity cargoInContainer = ContainerCargoEntity.builder()
                     .container(winningOffer.getContainer())

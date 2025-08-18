@@ -42,11 +42,12 @@ public class ContainerService {
     private final ApplicationEventPublisher eventPublisher;
     private final ChatService chatService;
 
+    // (getContainerStatuses, getAvailableContainers 등 다른 메서드는 기존과 동일)
     public List<ContainerStatusDto> getContainerStatuses(String currentUserId, Sort sort) {
         if (sort == null) {
             sort = Sort.by("containerId").ascending();
         }
-    	
+        
         UserEntity forwarder = userRepository.findByUserId(currentUserId);
         
         final String sortBy = sort.get().findFirst().map(Sort.Order::getProperty).orElse("containerId");
@@ -324,14 +325,12 @@ public class ContainerService {
         containerRepository.delete(container);
     }
     
+    /**
+     * 컨테이너를 최종 확정하고, 관련된 모든 후속 조치를 트리거합니다.
+     */
     @Transactional
     public void confirmContainer(String containerId, String currentUserId, String imoNumber) {
-        ContainerEntity container = containerRepository.findById(containerId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 컨테이너입니다."));
-        
-        if (!container.getForwarder().getUserId().equals(currentUserId)) {
-            throw new SecurityException("확정 권한이 없습니다.");
-        }
+        ContainerEntity container = findAndValidateContainer(containerId, currentUserId);
         
         List<OfferEntity> offers = offerRepository.findAllByContainer(container);
         boolean hasPendingOrForSale = offers.stream()
@@ -346,6 +345,10 @@ public class ContainerService {
         for (OfferEntity offer : offers) {
             if (offer.getStatus() == OfferStatus.ACCEPTED) {
                 offer.setStatus(OfferStatus.CONFIRMED);
+                // [✅ 핵심 수정] 더 이상 체인을 추적할 필요 없이,
+                // 현재 제안(offer)을 ChatService에 바로 전달합니다.
+                // ChatService가 알아서 원본 화주와 최종 운송사를 연결합니다.
+                chatService.createChatRoomForOffer(offer);
             }
         }
         
@@ -377,7 +380,7 @@ public class ContainerService {
             throw new IllegalStateException("'선적완료' 상태의 컨테이너만 운송완료 처리할 수 있습니다.");
         }
         container.setStatus(ContainerStatus.COMPLETED);
-        container.setCompletedAt(LocalDateTime.now()); // 운송완료 시간만 기록합니다.
+        container.setCompletedAt(LocalDateTime.now());
         
         List<OfferEntity> offersToUpdate = offerRepository.findAllByContainer(container);
         for (OfferEntity offer : offersToUpdate) {
@@ -388,15 +391,6 @@ public class ContainerService {
         eventPublisher.publishEvent(new NotificationEvents.ContainerStatusChangedEvent(this, container, "운송이 완료되었습니다."));
     }
 
-    private ContainerEntity findAndValidateContainer(String containerId, String currentUserId) {
-        ContainerEntity container = containerRepository.findById(containerId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 컨테이너입니다."));
-        if (!container.getForwarder().getUserId().equals(currentUserId)) {
-            throw new SecurityException("권한이 없습니다.");
-        }
-        return container;
-    }
-    
     @Transactional
     public void settleContainer(String containerId, String currentUserId) {
         ContainerEntity container = findAndValidateContainer(containerId, currentUserId);
@@ -408,17 +402,8 @@ public class ContainerService {
         chatService.closeChatRoomsForSettledContainer(container);
     }
     
- // ContainerService.java
-
-    /**
-     * 특정 제안(화물)을 한 컨테이너에서 다른 컨테이너로 이전합니다.
-     * @param offerId 이동할 화물에 해당하는 제안 ID
-     * @param toContainerId 화물이 들어갈 대상 컨테이너 ID
-     * @param currentUserId 현재 작업을 수행하는 사용자 ID
-     */
     @Transactional
     public void transferCargoToAnotherContainer(Long offerId, String toContainerId, String currentUserId) {
-        // 1. 필요한 엔티티 조회
         OfferEntity offerToMove = offerRepository.findByIdWithDetails(offerId)
                 .orElseThrow(() -> new IllegalArgumentException("이전할 제안(화물)을 찾을 수 없습니다."));
         ContainerEntity fromContainer = offerToMove.getContainer();
@@ -426,7 +411,6 @@ public class ContainerService {
                 .orElseThrow(() -> new IllegalArgumentException("대상 컨테이너를 찾을 수 없습니다."));
         UserEntity forwarder = userRepository.findByUserId(currentUserId);
 
-        // 2. 핵심 유효성 검사
         if (!fromContainer.getForwarder().getUserSeq().equals(forwarder.getUserSeq()) ||
             !toContainer.getForwarder().getUserSeq().equals(forwarder.getUserSeq())) {
             throw new SecurityException("자신의 컨테이너 간에만 화물을 옮길 수 있습니다.");
@@ -453,18 +437,25 @@ public class ContainerService {
             throw new IllegalArgumentException("대상 컨테이너의 잔여 용량이 부족합니다.");
         }
         
-        // [✅ 핵심 추가] ETA(도착 예정일)가 기존보다 늦어지는지 확인
         if (toContainer.getEta().isAfter(fromContainer.getEta())) {
             throw new IllegalArgumentException("기존보다 도착일이 늦어지는 컨테이너로는 이동할 수 없습니다.");
         }
 
-        // 3. 데이터베이스 업데이트
         offerToMove.setContainer(toContainer);
-        offerRepository.save(offerToMove); // 변경 사항 저장
+        offerRepository.save(offerToMove);
 
         containerCargoRepository.findByOfferOfferId(offerId).ifPresent(cargo -> {
             cargo.setContainer(toContainer);
-            containerCargoRepository.save(cargo); // 변경 사항 저장
+            containerCargoRepository.save(cargo);
         });
+    }
+
+    private ContainerEntity findAndValidateContainer(String containerId, String currentUserId) {
+        ContainerEntity container = containerRepository.findById(containerId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 컨테이너입니다."));
+        if (!container.getForwarder().getUserId().equals(currentUserId)) {
+            throw new SecurityException("권한이 없습니다.");
+        }
+        return container;
     }
 }

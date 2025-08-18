@@ -1,3 +1,4 @@
+// [✅ /service/ChatService.java 파일 전체를 이 최종 코드로 교체해주세요]
 package net.dima.project.service;
 
 import lombok.RequiredArgsConstructor;
@@ -28,8 +29,12 @@ public class ChatService {
     private final ContainerCargoRepository containerCargoRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
-    private final SseEmitterService sseEmitterService; // [✅ 추가]
+    private final SseEmitterService sseEmitterService;
 
+    /**
+     * 특정 제안(Offer)에 대한 채팅방을 생성합니다.
+     * [✅ 핵심 수정] 재판매 체인을 고려하여 원본 화주와 최종 운송사를 연결합니다.
+     */
     public void createChatRoomForOffer(OfferEntity offer) {
         if (chatRoomRepository.findByOffer(offer).isPresent()) {
             return;
@@ -37,8 +42,9 @@ public class ChatService {
 
         ChatRoom chatRoom = ChatRoom.builder().offer(offer).build();
 
-        UserEntity requester = offer.getRequest().getRequester();
-        UserEntity provider = offer.getForwarder();
+        // [✅ 수정] 재판매 체인의 원본 화주를 찾습니다.
+        UserEntity requester = offer.getRequest().getCargo().getOwner();
+        UserEntity provider = offer.getForwarder(); // 최종 운송사
 
         ChatParticipant requesterParticipant = ChatParticipant.builder()
                 .chatRoom(chatRoom).user(requester).roleInChat("REQUESTER").build();
@@ -52,6 +58,9 @@ public class ChatService {
         chatRoomRepository.save(chatRoom);
     }
 
+    /**
+     * 정산 완료된 컨테이너와 관련된 모든 채팅방을 닫습니다. (기존과 동일)
+     */
     public void closeChatRoomsForSettledContainer(ContainerEntity container) {
         containerCargoRepository.findAllByContainer(container).stream()
             .filter(cargo -> !cargo.getIsExternal() && cargo.getOffer() != null)
@@ -84,7 +93,6 @@ public class ChatService {
                 .collect(Collectors.toList());
     }
 
-    // [✅ 수정] 메시지 저장 시 SSE 이벤트 발생 로직 추가
     public ChatMessage saveMessage(ChatMessageDto dto) {
         UserEntity sender = userRepository.findById(dto.getSenderSeq())
                 .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다."));
@@ -99,7 +107,6 @@ public class ChatService {
         
         ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
 
-        // 트랜잭션 커밋 후 SSE 이벤트 전송
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
@@ -116,11 +123,9 @@ public class ChatService {
         return savedMessage;
     }
 
-    // [✅ 추가] 메시지 읽음 처리 메서드
     public void markMessagesAsRead(Long roomId, Integer userSeq) {
         chatMessageRepository.markAsReadByRoomIdAndUserSeq(roomId, userSeq);
 
-        // 트랜잭션 커밋 후 SSE 이벤트 전송
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
@@ -157,7 +162,6 @@ public class ChatService {
                     chatRoom.getOffer().getRequest().getCargo().getItemName());
         }
 
-        // [✅ 추가] 안 읽은 메시지 수 계산
         long unreadCount = chatMessageRepository.countUnreadMessages(chatRoom.getChatRoomId(), currentUserSeq);
 
         return ChatRoomDto.builder()

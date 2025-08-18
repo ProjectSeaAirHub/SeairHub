@@ -137,7 +137,8 @@
                                             <div class="status-color-bar empty"></div>
                                             <p class="title">입찰가능</p>
                                             <p class="amount" th:text="${#numbers.formatDecimal(c.availableCbm, 1, 2)} + ' CBM'"></p>
-                                            <a th:href="@{/fwd/fwdRequest}" class="btn btn-sm btn-primary" th:classappend="${activeMenu == 'fwdRequest'} ? 'is-active' : ''">추가입찰</a></li>
+                                            <a th:href="@{/fwd/fwdRequest(departurePort=${c.departurePort}, arrivalPort=${c.arrivalPort})}" 
+                                               class="btn btn-sm btn-primary">추가입찰</a>
                                         </div>
                                     </div>
                                 </div>
