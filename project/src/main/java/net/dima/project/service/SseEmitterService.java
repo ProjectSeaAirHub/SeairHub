@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class SseEmitterService {
 
-    private static final Long DEFAULT_TIMEOUT = 30L * 60  * 1000; // 1시간
+    private static final Long DEFAULT_TIMEOUT = 60L * 60 * 1000; // 1시간
     private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
 
     /**
@@ -52,7 +52,7 @@ public class SseEmitterService {
             try {
                 log.info("SSE: Sending event '{}' to user: {}. Data: {}", eventName, userId, data);
                 emitter.send(SseEmitter.event().name(eventName).data(data));
-            } catch (Exception e) {
+            } catch (IOException e) {
                 log.error("SSE: Failed to send event to user {}. Removing emitter.", userId, e);
                 emitters.remove(userId);
             }
