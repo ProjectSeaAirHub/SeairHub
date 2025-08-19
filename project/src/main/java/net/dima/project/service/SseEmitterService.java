@@ -52,7 +52,7 @@ public class SseEmitterService {
             try {
                 log.info("SSE: Sending event '{}' to user: {}. Data: {}", eventName, userId, data);
                 emitter.send(SseEmitter.event().name(eventName).data(data));
-            } catch (IOException e) {
+            } catch (Exception e) {
                 log.error("SSE: Failed to send event to user {}. Removing emitter.", userId, e);
                 emitters.remove(userId);
             }

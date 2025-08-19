@@ -292,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-	// const throttledInit = throttle(initializeNotifications, 1000);
-	// throttledInit();
-	initializeNotifications();
+	const throttledInit = throttle(initializeNotifications, 1000);
+	throttledInit();
+	// initializeNotifications();
 });
