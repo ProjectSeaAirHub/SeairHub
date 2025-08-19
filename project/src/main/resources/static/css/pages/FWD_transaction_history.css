@@ -180,3 +180,56 @@
 #search-form .btn-primary {
     margin-right: 8px;
 }
+
+
+/* [✅ FWD_transaction_history.css 파일 맨 아래에 이 코드를 추가해주세요] */
+
+/* 평점 주기 모달 스타일 */
+.rating-modal-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.rating-group {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.rating-group .label {
+    font-weight: 500;
+}
+
+/* 별점 UI 스타일 */
+.star-rating {
+    display: flex;
+    flex-direction: row-reverse; /* 별이 오른쪽부터 채워지도록 */
+    font-size: 2rem;
+    color: #ddd;
+}
+
+.star-rating input {
+    display: none;
+}
+
+.star-rating label {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+/* 선택된 별과 그 이전(오른쪽) 별들 색상 변경 */
+.star-rating input:checked ~ label,
+.star-rating label:hover,
+.star-rating label:hover ~ label {
+    color: #f5c518; /* 샛노란 별 색상 */
+}
+
+/* 평가 완료 버튼 스타일 */
+.btn-rated {
+    background-color: #6c757d;
+    color: white;
+    cursor: not-allowed;
+}

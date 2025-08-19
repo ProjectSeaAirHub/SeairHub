@@ -1,6 +1,7 @@
 // [✅ RequestService.java 파일 전체를 이 최종 코드로 교체해주세요]
 package net.dima.project.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,7 @@ import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import net.dima.project.dto.BlDto;
 import net.dima.project.dto.MyPostedRequestDto;
 import net.dima.project.dto.NewRequestDto;
 import net.dima.project.dto.RequestCardDto;
@@ -272,5 +274,49 @@ public class RequestService {
                     .build();
             containerCargoRepository.save(cargoInContainer);
         }
+    }
+    
+ // [✅ RequestService.java 클래스 내부에 아래 메서드를 추가해주세요]
+    /**
+     * B/L(선하증권) 정보 조회를 위한 서비스 메서드
+     * @param requestId B/L을 조회할 요청 ID
+     * @param currentUserId 현재 로그인한 사용자 ID (권한 확인용)
+     * @return B/L 정보가 채워진 BlDto 객체
+     */
+    @Transactional(readOnly = true)
+    public BlDto getBlInfo(Long requestId, String currentUserId) {
+        RequestEntity request = requestRepository.findRequestWithDetailsById(requestId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 요청입니다."));
+
+        // 요청을 한 사용자가 맞는지 권한 확인
+        if (!request.getRequester().getUserId().equals(currentUserId)) {
+            throw new SecurityException("자신의 요청에 대한 B/L만 조회할 수 있습니다.");
+        }
+
+        // 최종 운송을 담당하는 Offer를 재판매 체인을 따라가며 찾습니다.
+        OfferEntity finalOffer = findFinalOffer(request)
+                .orElseThrow(() -> new IllegalStateException("확정된 운송 정보를 찾을 수 없습니다."));
+
+        ContainerEntity finalContainer = finalOffer.getContainer();
+        UserEntity shipper = request.getRequester();
+        UserEntity forwarder = finalOffer.getForwarder();
+
+        // BlDto 객체를 생성하고 필요한 정보를 채웁니다.
+        return BlDto.builder()
+                .blNo("SHB-" + requestId + "-" + finalOffer.getOfferId())
+                .issueDate(LocalDate.now())
+                .shipperName(shipper.getCompanyName())
+                .shipperAddress("null") // 주소 정보는 현재 없으므로 null 처리
+                .consigneeName(shipper.getCompanyName()) // 일반적으로 수하인은 화주와 동일
+                .consigneeAddress("null")
+                .forwarderName(forwarder.getCompanyName())
+                .vesselName("null") // 선박 이름 정보는 현재 없으므로 null 처리
+                .imoNumber(finalContainer.getImoNumber())
+                .portOfLoading(request.getDeparturePort())
+                .portOfDischarge(request.getArrivalPort())
+                .containerNo(finalContainer.getContainerId())
+                .descriptionOfGoods(request.getCargo().getItemName())
+                .cbm(request.getCargo().getTotalCbm())
+                .build();
     }
 }

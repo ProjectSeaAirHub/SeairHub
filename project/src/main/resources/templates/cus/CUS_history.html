@@ -6,11 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>요청이력조회 - The 채움+</title>
 
-    <!-- 공통 CSS 링크 -->
     <link rel="stylesheet" th:href="@{/css/base.css}">
     <link rel="stylesheet" th:href="@{/css/layout.css}">
     <link rel="stylesheet" th:href="@{/css/components.css}">
-    <!-- 이 페이지 전용 CSS 링크 -->
     <link rel="stylesheet" th:href="@{/css/pages/FWD_transaction_history.css}">
 </head>
 
@@ -28,8 +26,10 @@
 			        <span>~</span>
 			        <input type="date" id="end-date" class="form-input date-input" th:value="${endDate}">
 			    </div>
-			    <form class="search-group" id="search-form">
-			        <input type="text" id="keyword-input" class="form-input" placeholder="품명 또는 담당포워더 검색" th:value="${keyword}">
+			    <form class="search-group" id="search-form" th:action="@{/cus/cusHistory}" method="get">
+			        <input type="hidden" name="startDate" th:value="${startDate}">
+			        <input type="hidden" name="endDate" th:value="${endDate}">
+			        <input type="text" id="keyword-input" name="keyword" class="form-input" placeholder="품명 또는 담당포워더 검색" th:value="${keyword}">
 			        <button type="submit" class="btn btn-primary">조회</button>
 			        <button type="button" id="btn-calculate-summary" class="btn btn-orange">매출계산</button>
 			    </form>
@@ -61,7 +61,12 @@
                                       th:text="${tx.status}" 
                                       th:classappend="${tx.status.toLowerCase()}"></span>
                             </td>
-                            <td><button class="btn btn-sm btn-details" disabled>상세보기</button></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline btn-rate-forwarder"
+                                        th:attr="data-forwarder-name=${tx.partnerName}, data-item-name=${tx.itemName}">
+                                    평점 주기
+                                </button>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -100,6 +105,65 @@
             </div>
         <div class="modal-footer">
             <button class="btn btn-secondary btn-cancel">닫기</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-wrapper" id="rating-modal" style="display: none;">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3 id="rating-modal-title">포워더 평가</h3>
+            <button class="btn-close">×</button>
+        </div>
+        <div class="modal-body rating-modal-body">
+            <p style="text-align: center; line-height: 1.5;">
+                <strong id="rating-forwarder-name" style="color: var(--danger-color);"></strong>에 대한<br>
+                <strong id="rating-item-name"></strong> 운송 경험은 어떠셨나요?
+            </p>
+            <div class="rating-group">
+                <span class="label">종합 만족도</span>
+                <div class="star-rating">
+                    <input type="radio" id="overall-5-stars" name="overall_rating" value="5" /><label for="overall-5-stars">★</label>
+                    <input type="radio" id="overall-4-stars" name="overall_rating" value="4" /><label for="overall-4-stars">★</label>
+                    <input type="radio" id="overall-3-stars" name="overall_rating" value="3" /><label for="overall-3-stars">★</label>
+                    <input type="radio" id="overall-2-stars" name="overall_rating" value="2" /><label for="overall-2-stars">★</label>
+                    <input type="radio" id="overall-1-star"  name="overall_rating" value="1" /><label for="overall-1-star">★</label>
+                </div>
+            </div>
+            <div class="rating-group">
+                <span class="label">가격</span>
+                <div class="star-rating">
+                    <input type="radio" id="price-5-stars" name="price_rating" value="5" /><label for="price-5-stars">★</label>
+                    <input type="radio" id="price-4-stars" name="price_rating" value="4" /><label for="price-4-stars">★</label>
+                    <input type="radio" id="price-3-stars" name="price_rating" value="3" /><label for="price-3-stars">★</label>
+                    <input type="radio" id="price-2-stars" name="price_rating" value="2" /><label for="price-2-stars">★</label>
+                    <input type="radio" id="price-1-star"  name="price_rating" value="1" /><label for="price-1-star">★</label>
+                </div>
+            </div>
+            <div class="rating-group">
+                <span class="label">속도</span>
+                <div class="star-rating">
+                    <input type="radio" id="speed-5-stars" name="speed_rating" value="5" /><label for="speed-5-stars">★</label>
+                    <input type="radio" id="speed-4-stars" name="speed_rating" value="4" /><label for="speed-4-stars">★</label>
+                    <input type="radio" id="speed-3-stars" name="speed_rating" value="3" /><label for="speed-3-stars">★</label>
+                    <input type="radio" id="speed-2-stars" name="speed_rating" value="2" /><label for="speed-2-stars">★</label>
+                    <input type="radio" id="speed-1-star"  name="speed_rating" value="1" /><label for="speed-1-star">★</label>
+                </div>
+            </div>
+            <div class="rating-group">
+                <span class="label">안정성</span>
+                <div class="star-rating">
+                    <input type="radio" id="stability-5-stars" name="stability_rating" value="5" /><label for="stability-5-stars">★</label>
+                    <input type="radio" id="stability-4-stars" name="stability_rating" value="4" /><label for="stability-4-stars">★</label>
+                    <input type="radio" id="stability-3-stars" name="stability_rating" value="3" /><label for="stability-3-stars">★</label>
+                    <input type="radio" id="stability-2-stars" name="stability_rating" value="2" /><label for="stability-2-stars">★</label>
+                    <input type="radio" id="stability-1-star"  name="stability_rating" value="1" /><label for="stability-1-star">★</label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary btn-cancel">취소</button>
+            <button class="btn btn-primary" id="btn-submit-rating">제출</button>
         </div>
     </div>
 </div>

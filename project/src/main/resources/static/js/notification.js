@@ -93,11 +93,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const eventSource = new EventSource('/api/notifications/subscribe');
+		
+		let heartbeatTimer = null;
+		const resetHeartbeatTimer = () => {
+		    clearTimeout(heartbeatTimer);
+		    // 40초 동안 아무 신호가 없으면 연결 문제를 경고하고 새로고침 유도
+		    heartbeatTimer = setTimeout(() => {
+		        console.error("SSE Heartbeat timeout. Connection may be lost.");
+		        alert("서버와의 연결이 끊겼습니다. 페이지를 새로고침합니다.");
+		        window.location.reload();
+		        eventSource.close();
+		    }, 40000); // 40초
+		};
 
         eventSource.onopen = () => {
             console.log("SSE connection established. Resetting retry count.");
             retryCount = 0;
+			resetHeartbeatTimer();
         };
+		
+		// 서버로부터 어떤 메시지든 받으면 타이머를 리셋
+		eventSource.onmessage = (event) => {
+		    resetHeartbeatTimer();
+		};
 
         eventSource.addEventListener('unreadCount', (event) => {
             updateCountUI(event.data);
@@ -274,6 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    const throttledInit = throttle(initializeNotifications, 1000);
-    throttledInit();
+	// const throttledInit = throttle(initializeNotifications, 1000);
+	// throttledInit();
+	initializeNotifications();
 });

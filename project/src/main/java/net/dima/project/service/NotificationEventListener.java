@@ -65,6 +65,7 @@ public class NotificationEventListener {
     /**
      * 제안 확정(낙찰/거절) 시, 각 포워더에게 결과를 알립니다.
      */
+    @Async
     @EventListener
     public void handleOfferConfirmedEvent(OfferConfirmedEvent event) {
         OfferEntity winningOffer = event.getWinningOffer();
@@ -93,6 +94,7 @@ public class NotificationEventListener {
     /**
      * 컨테이너 상태 변경 시, 관련된 모든 사용자에게 알림 및 UI 업데이트를 보냅니다.
      */
+    @Async
     @EventListener
     public void handleContainerStatusChangedEvent(ContainerStatusChangedEvent event) {
         ContainerEntity container = event.getContainer();

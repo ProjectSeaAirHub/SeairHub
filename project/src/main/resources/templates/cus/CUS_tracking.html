@@ -54,13 +54,20 @@
                                             <span class="label">담당 포워더</span>
                                             <span class="company-name" th:text="${req.winningBidderCompanyName}"></span>
                                         </div>
-                                        <div class="tracking-action">
-                                            <button class="btn btn-sm btn-outline btn-track-shipment" 
-                                                    th:attr="data-imo-number=${req.imoNumber}, data-request-id=${req.requestId}"
-                                                    th:disabled="${req.imoNumber == null}">
-                                                운송조회 &#9660;
-                                            </button>
-                                        </div>
+<div class="tracking-action">
+    <button class="btn btn-sm btn-outline btn-track-shipment" 
+            th:attr="data-imo-number=${req.imoNumber}, data-request-id=${req.requestId}"
+            th:disabled="${req.imoNumber == null}">
+        운송조회 &#9660;
+    </button>
+    
+    <a th:if="${#lists.contains({'CONFIRMED','SHIPPED','COMPLETED'}, req.detailedStatus)}"
+       th:href="@{/download/bl/{requestId}(requestId=${req.requestId})}"
+       class="btn btn-sm btn-primary" 
+       style="margin-left: 8px;">
+        서류 출력
+    </a>
+</div>
                                     </div>
                                 </th:block>
                             </article>

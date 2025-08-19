@@ -1,4 +1,4 @@
-// [✅ CUS_history.js 파일의 전체 내용]
+// [✅ CUS_history.js 파일 전체를 이 코드로 교체해주세요]
 document.addEventListener('DOMContentLoaded', () => {
     
     const searchForm = document.getElementById('search-form');
@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', () => {
 	// [추가] 날짜 입력 필드를 변수로 가져옵니다.
 	const startDateInput = document.getElementById('start-date');
 	const endDateInput = document.getElementById('end-date');
+    // [추가] 평점 모달과 테이블 body를 변수로 가져옵니다.
+    const ratingModal = document.getElementById('rating-modal');
+    const tableBody = document.querySelector('.transaction-table tbody');
 	
 	
     if (!searchForm || !calcButton || !summaryModal) {
@@ -39,9 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // form의 기본 제출 이벤트를 막지 않고, 그대로 페이지를 새로고침하며 검색합니다.
     });
 
-    // --- 금액 계산 및 모달 로직 ---
+    // --- 금액 계산 및 모달 로직 (기존과 동일) ---
     function showSummaryModal() {
-        const tableBody = document.querySelector('.transaction-table tbody');
         const rows = tableBody.querySelectorAll('tr');
 
         if (rows.length === 0 || (rows.length === 1 && rows[0].querySelector('td[colspan="6"]'))) {
@@ -93,6 +95,62 @@ document.addEventListener('DOMContentLoaded', () => {
 
     summaryModal.querySelector('.btn-close').addEventListener('click', () => summaryModal.style.display = 'none');
     summaryModal.querySelector('.btn-cancel').addEventListener('click', () => summaryModal.style.display = 'none');
-	// [추가] 페이지가 처음 로드될 때 기본 날짜 설정 함수를 호출합니다.
 	setDefaultDates();
+
+    // --- 평점 주기 모달 로직 (새로 추가되는 부분) ---
+	if (ratingModal && tableBody) {
+	    const forwarderNameEl = document.getElementById('rating-forwarder-name');
+	    const itemNameEl = document.getElementById('rating-item-name');
+	    const submitRatingBtn = document.getElementById('btn-submit-rating');
+	    let currentRatingButton = null;
+
+	    const closeRatingModal = () => ratingModal.style.display = 'none';
+	    ratingModal.querySelector('.btn-close').addEventListener('click', closeRatingModal);
+	    ratingModal.querySelector('.btn-cancel').addEventListener('click', closeRatingModal);
+
+	    tableBody.addEventListener('click', (e) => {
+	        const target = e.target;
+	        if (target.classList.contains('btn-rate-forwarder') && !target.disabled) {
+	            currentRatingButton = target;
+	            const forwarderName = target.dataset.forwarderName;
+	            const itemName = target.dataset.itemName;
+
+	            forwarderNameEl.textContent = forwarderName;
+	            itemNameEl.textContent = `'${itemName}'`;
+
+	            // 모든 별점 그룹 초기화
+	            const ratingGroups = ratingModal.querySelectorAll('.star-rating input');
+	            ratingGroups.forEach(star => star.checked = false);
+
+	            ratingModal.style.display = 'flex';
+	        }
+	    });
+
+	    submitRatingBtn.addEventListener('click', () => {
+	        // 각 항목별로 선택된 평점 확인
+	        const overallRating = ratingModal.querySelector('input[name="overall_rating"]:checked');
+	        const priceRating = ratingModal.querySelector('input[name="price_rating"]:checked');
+	        const speedRating = ratingModal.querySelector('input[name="speed_rating"]:checked');
+	        const stabilityRating = ratingModal.querySelector('input[name="stability_rating"]:checked');
+
+	        // 모든 항목이 선택되었는지 검증
+	        if (!overallRating || !priceRating || !speedRating || !stabilityRating) {
+	            alert('모든 항목의 평점을 선택해주세요.');
+	            return;
+	        }
+
+	        // 제출된 평점 정보를 종합하여 메시지 생성
+	        const message = `평가가 제출되었습니다. 소중한 의견 감사합니다!`;
+	        alert(message);
+	        
+	        if (currentRatingButton) {
+	            currentRatingButton.textContent = '평가 완료';
+	            currentRatingButton.disabled = true;
+	            currentRatingButton.classList.remove('btn-outline');
+	            currentRatingButton.classList.add('btn-rated');
+	        }
+	        
+	        closeRatingModal();
+	    });
+	}
 });

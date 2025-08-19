@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class SseEmitterService {
 
-    private static final Long DEFAULT_TIMEOUT = 60L * 60 * 1000; // 1시간
+    private static final Long DEFAULT_TIMEOUT = 30L * 1000; // 1시간
     private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
 
     /**
