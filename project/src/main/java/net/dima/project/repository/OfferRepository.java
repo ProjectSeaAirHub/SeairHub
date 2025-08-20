@@ -104,7 +104,7 @@ public interface OfferRepository extends JpaRepository<OfferEntity, Long>, JpaSp
     List<Object[]> countOffersByRequestIn(@Param("requests") List<RequestEntity> requests);
 
     /**
-     * [✅ 수정] 여러 요청에 대한 '낙찰된' 제안 정보를 한 번의 쿼리로 조회합니다. N+1 문제 해결의 핵심입니다.
+     * [✅ 핵심 수정] 여러 요청에 대한 '낙찰된' 제안 정보를 한 번의 쿼리로 조회합니다. N+1 문제 해결의 핵심입니다.
      * findWinningOfferForRequest와 동일한 로직을 사용합니다.
      */
     @Query("SELECT o FROM OfferEntity o JOIN FETCH o.forwarder f " +

@@ -39,8 +39,8 @@ public class NotificationEventListener {
 
     /**
      * 신규 제안 생성 시, 요청자에게 실시간 알림과 UI 업데이트를 보냅니다.
+     * [✅ 수정] @Async 제거
      */
-    @Async
     @EventListener
     public void handleOfferCreatedEvent(OfferCreatedEvent event) {
         OfferEntity offer = event.getOffer();
@@ -64,8 +64,8 @@ public class NotificationEventListener {
 
     /**
      * 제안 확정(낙찰/거절) 시, 각 포워더에게 결과를 알립니다.
+     * [✅ 수정] @Async 제거
      */
-    @Async
     @EventListener
     public void handleOfferConfirmedEvent(OfferConfirmedEvent event) {
         OfferEntity winningOffer = event.getWinningOffer();
@@ -93,8 +93,8 @@ public class NotificationEventListener {
 
     /**
      * 컨테이너 상태 변경 시, 관련된 모든 사용자에게 알림 및 UI 업데이트를 보냅니다.
+     * [✅ 수정] @Async 제거
      */
-    @Async
     @EventListener
     public void handleContainerStatusChangedEvent(ContainerStatusChangedEvent event) {
         ContainerEntity container = event.getContainer();
@@ -141,8 +141,8 @@ public class NotificationEventListener {
 
     /**
      * 신규 화물 요청 생성 시, 접속 중인 모든 포워더에게 SSE 이벤트를 보냅니다.
+     * [✅ 수정] @Async 제거
      */
-    @Async
     @EventListener
     public void handleRequestCreatedEvent(RequestCreatedEvent event) {
         RequestCardDto newRequestDto = event.getRequestCardDto();
@@ -170,13 +170,17 @@ public class NotificationEventListener {
             .forEach(userId -> sseEmitterService.sendToClient(userId, "dashboard_update", latestMetrics));
     }
     
-    @Async
+    /**
+     * [✅ 수정] @Async 제거
+     */
     @EventListener
     public void handleUserJoinedEvent(UserJoinedEvent event) {
         triggerDashboardUpdate();
     }
     
-    @Async
+    /**
+     * [✅ 수정] @Async 제거
+     */
     @EventListener
     public void handleDealMadeEvent(DealMadeEvent event) {
         triggerDashboardUpdate();

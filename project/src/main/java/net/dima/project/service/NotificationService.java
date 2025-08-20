@@ -62,6 +62,11 @@ public class NotificationService {
         return notificationRepository.countByReceiverAndIsReadFalse(user);
     }
     
+    /**
+     * [✅ 핵심 추가] SSE 연결 유지를 위한 Heartbeat
+     * 15초마다 연결된 모든 클라이언트에게 'heartbeat' 이벤트를 보냅니다.
+     * 이는 ngrok, 로드밸런서, 프록시 등이 유휴 상태로 간주하여 연결을 끊는 것을 방지합니다.
+     */
     @Scheduled(fixedRate = 15000)
     public void sendHeartbeat() {
         sseEmitterService.getEmitters().forEach((userId, emitter) -> {
@@ -84,7 +89,6 @@ public class NotificationService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 알림입니다."));
         notification.setRead(true);
         
-        // [✅ 추가] 단일 읽음 처리 후에도 unreadCount를 다시 보내주면 더 안정적입니다.
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
@@ -100,7 +104,6 @@ public class NotificationService {
         UserEntity user = userRepository.findByUserId(userId);
         notificationRepository.markAllAsReadByUser(user);
         
-        // [✅ 핵심 수정] '모두 읽음' 처리 후, 변경된 unreadCount(0)를 클라이언트에 전송합니다.
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {

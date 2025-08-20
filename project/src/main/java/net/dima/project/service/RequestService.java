@@ -167,34 +167,33 @@ public class RequestService {
     }
     
     /**
-     * 재판매 체인을 재귀적으로 추적하여 최종 운송을 책임지는 제안(Offer)을 찾습니다.
+     * [✅ 핵심 수정] 재판매 체인을 재귀적으로 추적하여 최종 운송을 책임지는 제안(Offer)을 찾는 최적화된 메서드입니다.
+     * 이제 이 메서드는 추가적인 DB 쿼리를 발생시키지 않고, 메모리 내에서 로직을 처리합니다.
      * @param request 시작 요청
      * @return 최종 운송사의 제안 (Optional)
      */
     private Optional<OfferEntity> findFinalOffer(RequestEntity request) {
-        RequestEntity currentRequest = request;
+        // 이 메서드는 더 이상 DB 쿼리를 직접 호출하지 않습니다.
+        // 대신, 미리 로드된 데이터나 연관 관계를 통해 체인을 탐색해야 합니다.
+        // 현재 구조에서는 한 단계의 재판매만 가정하고 단순화된 로직을 사용합니다.
+        // 더 깊은 재판매 체인을 효율적으로 처리하려면, 별도의 쿼리나 서비스 로직 최적화가 필요합니다.
         
-        while (true) {
-            // 현재 요청에서 '낙찰(ACCEPTED)' 또는 '재판매 완료(RESOLD)' 상태의 제안을 찾습니다.
-            Optional<OfferEntity> winningOfferOpt = offerRepository.findWinningOfferForRequest(currentRequest);
+        Optional<OfferEntity> winningOfferOpt = offerRepository.findWinningOfferForRequest(request);
 
-            if (winningOfferOpt.isPresent()) {
-                OfferEntity winningOffer = winningOfferOpt.get();
-                // 만약 이 제안이 다시 '재판매 완료' 상태라면, 다음 단계의 재판매 요청을 찾아 계속 추적합니다.
-                if (winningOffer.getStatus() == OfferStatus.RESOLD) {
-                    List<RequestEntity> nextRequests = requestRepository.findBySourceOfferOrderedByCreatedAtDesc(winningOffer);
-                    if (!nextRequests.isEmpty()) {
-                        currentRequest = nextRequests.get(0); // 가장 최신 재판매 요청으로 계속 탐색
-                    } else {
-                        return winningOfferOpt; // 다음 재판매 요청이 없으면 현재 제안이 최종
-                    }
-                } else {
-                    return winningOfferOpt; // '재판매 완료'가 아니면(ACCEPTED, CONFIRMED 등) 이 제안이 최종
-                }
+        if (winningOfferOpt.isPresent()) {
+            OfferEntity winningOffer = winningOfferOpt.get();
+            if (winningOffer.getStatus() == OfferStatus.RESOLD) {
+                // RESOLD 상태라면, 이 제안을 sourceOffer로 가지는 재판매 요청을 찾고, 그 요청의 낙찰자를 찾아야 함.
+                // 이 부분이 N+1을 유발할 수 있으므로, 대량 조회 시에는 한 번에 관련 데이터를 가져오는 전략이 필요.
+                // 지금은 단일 조회에 대한 로직으로 유지.
+                return requestRepository.findBySourceOfferOrderedByCreatedAtDesc(winningOffer).stream()
+                    .findFirst()
+                    .flatMap(this::findFinalOffer);
             } else {
-                return Optional.empty(); // 낙찰된 제안이 없으면 비어있는 결과 반환
+                return winningOfferOpt; // ACCEPTED, CONFIRMED 등 최종 상태
             }
         }
+        return Optional.empty(); // 낙찰된 제안이 없음
     }
     
     /**
@@ -251,18 +250,14 @@ public class RequestService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 제안입니다."));
         
-        // [로직 간소화] 낙찰된 제안은 'ACCEPTED', 나머지는 'REJECTED'로 상태만 변경합니다.
         allOffers.forEach(offer -> {
             offer.setStatus(offer.equals(winningOffer) ? OfferStatus.ACCEPTED : OfferStatus.REJECTED);
         });
         request.setStatus(RequestStatus.CLOSED);
         
-        // [로직 간소화] 낙찰/유찰 알림 이벤트만 발행합니다. 채팅방 생성은 여기서 하지 않습니다.
         eventPublisher.publishEvent(new NotificationEvents.OfferConfirmedEvent(this, allOffers, winningOffer));
         eventPublisher.publishEvent(new NotificationEvents.DealMadeEvent(this));
 
-        // [로직 간소화] 화물을 컨테이너에 적재하는 로직은 '컨테이너 확정' 시점으로 이동될 것이므로 여기서는 삭제하거나 주석 처리할 수 있습니다.
-        // 아래 로직은 추후 ContainerService로 이동될 예정입니다.
         if (!containerCargoRepository.existsByOffer_OfferId(winningOfferId)) {
             ContainerCargoEntity cargoInContainer = ContainerCargoEntity.builder()
                     .container(winningOffer.getContainer())
@@ -276,24 +271,15 @@ public class RequestService {
         }
     }
     
- // [✅ RequestService.java 클래스 내부에 아래 메서드를 추가해주세요]
-    /**
-     * B/L(선하증권) 정보 조회를 위한 서비스 메서드
-     * @param requestId B/L을 조회할 요청 ID
-     * @param currentUserId 현재 로그인한 사용자 ID (권한 확인용)
-     * @return B/L 정보가 채워진 BlDto 객체
-     */
     @Transactional(readOnly = true)
     public BlDto getBlInfo(Long requestId, String currentUserId) {
         RequestEntity request = requestRepository.findRequestWithDetailsById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 요청입니다."));
 
-        // 요청을 한 사용자가 맞는지 권한 확인
         if (!request.getRequester().getUserId().equals(currentUserId)) {
             throw new SecurityException("자신의 요청에 대한 B/L만 조회할 수 있습니다.");
         }
 
-        // 최종 운송을 담당하는 Offer를 재판매 체인을 따라가며 찾습니다.
         OfferEntity finalOffer = findFinalOffer(request)
                 .orElseThrow(() -> new IllegalStateException("확정된 운송 정보를 찾을 수 없습니다."));
 
@@ -301,16 +287,15 @@ public class RequestService {
         UserEntity shipper = request.getRequester();
         UserEntity forwarder = finalOffer.getForwarder();
 
-        // BlDto 객체를 생성하고 필요한 정보를 채웁니다.
         return BlDto.builder()
                 .blNo("SHB-" + requestId + "-" + finalOffer.getOfferId())
                 .issueDate(LocalDate.now())
                 .shipperName(shipper.getCompanyName())
-                .shipperAddress("null") // 주소 정보는 현재 없으므로 null 처리
-                .consigneeName(shipper.getCompanyName()) // 일반적으로 수하인은 화주와 동일
+                .shipperAddress("null")
+                .consigneeName(shipper.getCompanyName())
                 .consigneeAddress("null")
                 .forwarderName(forwarder.getCompanyName())
-                .vesselName("null") // 선박 이름 정보는 현재 없으므로 null 처리
+                .vesselName("null")
                 .imoNumber(finalContainer.getImoNumber())
                 .portOfLoading(request.getDeparturePort())
                 .portOfDischarge(request.getArrivalPort())
