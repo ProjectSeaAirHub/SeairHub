@@ -47,7 +47,7 @@
 						    </form>
 						</div>
                     <div class="posted-request-list">
-                        <div th:if="${requestPage.empty}" class="no-results-message">등록된 요청이 없습니다. 우측 하단 버튼으로 새 요청을 등록해보세요.</div>
+                        <div th:if="${requestPage.empty}" class="no-results-message">새 요청을 등록해보세요!</div>
 
                         <div class="request-item-container" th:each="req : ${requestPage.content}">
                             <article class="card request-card" th:attr="data-request-id=${req.requestId}"

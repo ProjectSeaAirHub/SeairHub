@@ -9,6 +9,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const notiBtn = notificationArea.querySelector('.notification-btn');
     const markAllReadBtn = document.getElementById('mark-all-read-btn');
 
+    // [✅ 1. 오디오 객체 생성]
+    // 페이지 로드 시, 알림음 파일을 미리 로드해둡니다.
+    // 'preload' 속성은 브라우저에게 이 오디오 파일을 사용할 것이라고 미리 알려주는 역할을 합니다.
+    const notificationSound = new Audio('/sounds/notification.mp3');
+    notificationSound.preload = 'auto';
+
     let retryCount = 0;
     const maxRetries = 5;
     let throttleTimer = null;
@@ -37,19 +43,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    /**
-     * [✅ 핵심 수정 1] 알림 항목을 목록의 맨 위에 추가(prepend)하는 함수입니다.
-     */
     const prependNotificationToList = (noti) => {
         const noNotiMsg = listElement.querySelector('.no-notifications');
-        if (noNotiMsg) noNotiMsg.remove(); // '알림 없음' 메시지가 있다면 제거
+        if (noNotiMsg) noNotiMsg.remove();
         
         const li = document.createElement('li');
         li.dataset.id = noti.id;
         li.dataset.url = noti.url;
         li.innerHTML = `<div class="message">${noti.message}</div><div class="timestamp">${noti.createdAt}</div>`;
         
-        listElement.prepend(li); // 새 알림을 목록의 맨 위에 추가
+        listElement.prepend(li);
     };
 
     const showNoNotificationMessage = () => {
@@ -67,22 +70,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/api/notifications');
             if (!response.ok) throw new Error('알림 목록 로딩 실패');
             
-            const notifications = await response.json(); // 서버로부터 최신순으로 정렬된 목록을 받음
+            const notifications = await response.json();
             
             listElement.innerHTML = '';
             if (notifications.length === 0) {
                 showNoNotificationMessage();
             } else {
-                /**
-                 * [✅ 핵심 수정 2] 서버에서 받은 최신순 목록을 그대로 화면에 표시합니다.
-                 * forEach와 appendChild를 사용하여 배열 순서 그대로 (최신순으로) li 요소를 추가합니다.
-                 */
                 notifications.forEach(noti => {
                     const li = document.createElement('li');
                     li.dataset.id = noti.id;
                     li.dataset.url = noti.url;
                     li.innerHTML = `<div class="message">${noti.message}</div><div class="timestamp">${noti.createdAt}</div>`;
-                    listElement.appendChild(li); // 목록의 맨 뒤에 추가
+                    listElement.appendChild(li);
                 });
             }
             updateCountUI(notifications.length);
@@ -103,14 +102,20 @@ document.addEventListener('DOMContentLoaded', () => {
             updateCountUI(event.data);
         });
 
-        /**
-         * [✅ 핵심 수정 3] 새로운 'notification' 이벤트 수신 시, 전체 목록을 다시 불러오는 대신
-         * 전달받은 새 알림 데이터만 목록의 맨 위에 바로 추가하여 훨씬 효율적으로 동작합니다.
-         */
         eventSource.addEventListener('notification', (event) => {
              try {
                 const newNotification = JSON.parse(event.data);
-                prependNotificationToList(newNotification); // 새 알림을 맨 위에 추가하는 함수 호출
+                prependNotificationToList(newNotification);
+
+                // [✅ 2. 알림 소리 재생]
+                // 새로운 'notification' 이벤트가 도착했을 때, 로드해둔 오디오 파일을 재생합니다.
+                // play() 메소드는 Promise를 반환하므로, catch를 통해 사용자가 자동재생을 막았을 때의 오류를 처리할 수 있습니다.
+                notificationSound.play().catch(error => {
+                    // 최신 브라우저들은 사용자의 상호작용(클릭 등) 없이는 오디오 자동재생을 막는 경우가 많습니다.
+                    // 이 경우 콘솔에 오류가 찍히는 것을 방지하기 위한 처리입니다.
+                    console.log("Audio play was prevented by browser policy.");
+                });
+
              } catch (error) {
                  console.error("새 알림 처리 중 오류 발생:", error);
              }
