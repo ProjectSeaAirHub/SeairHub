@@ -29,7 +29,7 @@
             </div>
             <div id="confirmId"></div>
 			<div class="form-group">
-			    <input type="email" id="email" name="email" placeholder="이메일을 입력해주세요." required
+			    <input type="email" id="email" name="email" placeholder="이메일을 입력해주세요.(abc@abc.com)" required
 			           th:value="${social_email}"
 			           th:readonly="${social_email != null}">
 			</div>
@@ -45,7 +45,7 @@
 			    <input type="text" id="userName" name="userName" placeholder="이름을 입력해주세요." required>
 			</div>
 			<div class="form-group">
-			    <input type="tel" id="phoneNum" name="phoneNum" placeholder="전화번호 ('-' 없이 입력)" required>
+			    <input type="tel" id="phoneNum" name="phoneNum" placeholder="전화번호 ('-' 없이 9~10자리)" required>
 			</div>
 			<div class="form-group">
                 <input type="text" id="companyName" name="companyName" placeholder="회사 이름을 입력해주세요." required>
